@@ -46,7 +46,7 @@ export default function Card({
       onDrop={(e) => onDrop(e, card.id)}
       onClick={handleCardClick}
       onDoubleClick={handleCardDoubleClick}
-      className={`playing-card-wrapper w-[70px] xs:w-[85px] sm:w-[100px] h-[98px] xs:h-[119px] sm:h-[140px] rounded-xl overflow-hidden bg-white shadow-xl ${isSelected ? 'selected' : ''} ${isNewlyDrawn ? 'ring-4 ring-blue-500 ring-offset-2 ring-offset-slate-900 shadow-[0_0_20px_rgba(59,130,246,0.6)]' : ''}`}
+      className={`playing-card-wrapper w-[76px] xs:w-[85px] sm:w-[100px] h-[106px] xs:h-[119px] sm:h-[140px] rounded-xl overflow-hidden bg-white shadow-xl ${isSelected ? 'selected' : ''} ${isNewlyDrawn ? 'ring-4 ring-blue-500 ring-offset-2 ring-offset-slate-900 shadow-[0_0_20px_rgba(59,130,246,0.6)]' : ''}`}
       style={style}
     >
       <img 

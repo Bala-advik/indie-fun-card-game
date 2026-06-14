@@ -38,8 +38,8 @@ html, body, #root {
   user-select: none;
   transform-origin: bottom center;
   /* Responsive sizing */
-  width: 55px;
-  height: 77px; /* 1 : 1.4 */
+  width: 62px;
+  height: 87px; /* 1 : 1.4 */
 }
 
 @media (min-width: 375px) {
@@ -72,7 +72,7 @@ html, body, #root {
 
 /* Overlapping effect (negative margins) */
 .playing-card-wrapper:not(:first-child) {
-  margin-left: -32px;
+  margin-left: -36px;
 }
 
 @media (min-width: 375px) {

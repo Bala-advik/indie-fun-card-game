@@ -875,10 +875,14 @@ export default function App() {
 
       {gameState === 'game_over' && (
         <GameOverScreen
-          winner={winner === myPlayerId ? 'player' : 'pc'}
-          playerHand={myHand}
-          pcHand={playerHands[winner === myPlayerId ? Object.keys(playerHands).find(id => id !== myPlayerId) : winner]}
-          onRestart={gameMode === 'pvp' ? () => createPvpLobby(numPlayers) : () => startPcGame(numPlayers)}
+          winner={winner}
+          myPlayerId={myPlayerId}
+          playerHands={playerHands}
+          isPvp={gameMode === 'pvp'}
+          isHost={myRole === 'host'}
+          onRestart={gameMode === 'pvp' ? () => {
+            if (myRole === 'host') startPvpGame();
+          } : () => startPcGame(numPlayers)}
           onMainMenu={quitToMainMenu}
         />
       )}
