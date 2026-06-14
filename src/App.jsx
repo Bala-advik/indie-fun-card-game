@@ -40,26 +40,26 @@ const QUICK_CHAT_OPTIONS = [
 
 export default function App() {
   // Game Modes & Networking state
-  const [gameMode, setGameMode] = useState('pc'); 
-  const [myRole, setMyRole] = useState('none'); 
+  const [gameMode, setGameMode] = useState('pc');
+  const [myRole, setMyRole] = useState('none');
   const [myPlayerId, setMyPlayerId] = useState('p1');
   const [roomCode, setRoomCode] = useState('');
-  const [connectionState, setConnectionState] = useState('disconnected'); 
-  
+  const [connectionState, setConnectionState] = useState('disconnected');
+
   // Game states
-  const [gameState, setGameState] = useState('welcome'); 
+  const [gameState, setGameState] = useState('welcome');
   const [numPlayers, setNumPlayers] = useState(2);
   const [deck, setDeck] = useState([]);
   const [discardPile, setDiscardPile] = useState([]);
   const [playerHands, setPlayerHands] = useState({ p1: [], p2: [], p3: [], p4: [] });
-  
-  const [activePlayer, setActivePlayer] = useState('p1'); 
-  const [turnPhase, setTurnPhase] = useState('draw'); 
+
+  const [activePlayer, setActivePlayer] = useState('p1');
+  const [turnPhase, setTurnPhase] = useState('draw');
   const [newlyDrawnCardId, setNewlyDrawnCardId] = useState(null);
   const [selectedCardId, setSelectedCardId] = useState(null);
-  
-  const [winner, setWinner] = useState(null); 
-  
+
+  const [winner, setWinner] = useState(null);
+
   // UI Panels
   const [showRules, setShowRules] = useState(false);
   const [showLogs, setShowLogs] = useState(false);
@@ -74,7 +74,7 @@ export default function App() {
   // PeerJS Refs
   const peerRef = useRef(null);
   const hostConnRef = useRef(null);
-  const guestConnsRef = useRef({}); 
+  const guestConnsRef = useRef({});
 
   const [connectedGuests, setConnectedGuests] = useState(0);
   const [actionQueue, setActionQueue] = useState([]);
@@ -120,27 +120,27 @@ export default function App() {
     setGameMode('pc');
     setMyRole('none');
     setMyPlayerId('p1');
-    
+
     const freshDeck = shuffle(create108Deck());
     const newHands = { p1: [], p2: [], p3: [], p4: [] };
-    
+
     for (let i = 1; i <= selectedNumPlayers; i++) {
       const pId = `p${i}`;
       const hand = freshDeck.splice(0, 13);
       newHands[pId] = i === 1 ? sortHandByRank(hand) : hand;
     }
     const firstDiscard = freshDeck.pop();
-    
+
     setDeck(freshDeck);
     setDiscardPile([firstDiscard]);
     setPlayerHands(newHands);
-    
+
     setActivePlayer('p1');
     setTurnPhase('draw');
     setNewlyDrawnCardId(null);
     setSelectedCardId(null);
     setWinner(null);
-    
+
     setGameState('playing');
     setPcStatus('Waiting for your turn...');
     setIsPcThinking(false);
@@ -171,12 +171,12 @@ export default function App() {
             setTimeout(() => incomingConn.close(), 500);
             return;
           }
-          
+
           const newGuestId = `p${currentGuestsCount + 2}`;
           guestConnsRef.current[newGuestId] = incomingConn;
           setConnectedGuests(Object.keys(guestConnsRef.current).length);
           logAction(`Player ${newGuestId.replace('p', '')} connected!`);
-          
+
           incomingConn.send({ type: 'assign_id', playerId: newGuestId, numPlayers: selectedNumPlayers });
 
           incomingConn.on('data', (data) => {
@@ -206,10 +206,10 @@ export default function App() {
 
   const startPvpGame = () => {
     if (Object.keys(guestConnsRef.current).length < numPlayers - 1) return;
-    
+
     const freshDeck = shuffle(create108Deck());
     const newHands = { p1: [], p2: [], p3: [], p4: [] };
-    
+
     for (let i = 1; i <= numPlayers; i++) {
       const pId = `p${i}`;
       newHands[pId] = sortHandByRank(freshDeck.splice(0, 13));
@@ -289,7 +289,7 @@ export default function App() {
         );
         hostConnRef.current = conn;
       },
-      () => {},
+      () => { },
       (err) => {
         console.error('Peer error:', err);
         setConnectionState('disconnected');
@@ -307,7 +307,7 @@ export default function App() {
     setTurnPhase(s.turnPhase);
     setNewlyDrawnCardId(s.newlyDrawnCardId);
     setWinner(s.winner);
-    
+
     if (s.winner) {
       setGameState('game_over');
       logAction(`Game Over! Winner: Player ${s.winner.replace('p', '')}`);
@@ -330,7 +330,7 @@ export default function App() {
       newChats[senderId] = text;
       return newChats;
     });
-    
+
     if (myRole === 'host') {
       Object.values(guestConnsRef.current).forEach(conn => {
         conn.send({ type: 'chat', playerId: senderId, text });
@@ -351,7 +351,7 @@ export default function App() {
   useEffect(() => {
     if (actionQueue.length > 0) {
       const nextAction = actionQueue[0];
-      
+
       if (nextAction.actionData.action === 'draw') {
         executeDrawCard(nextAction.guestId, nextAction.actionData.source);
       } else if (nextAction.actionData.action === 'discard') {
@@ -371,10 +371,10 @@ export default function App() {
   const handlePlayerSort = (type) => {
     const hand = [...playerHands[myPlayerId]];
     const newHand = type === 'rank' ? sortHandByRank(hand) : sortHandBySuit(hand);
-    
+
     setPlayerHands(prev => ({ ...prev, [myPlayerId]: newHand }));
     logAction(`Player sorted hand by ${type === 'rank' ? 'Rank' : 'Suit'}.`);
-    
+
     if (myRole === 'guest' && hostConnRef.current) {
       hostConnRef.current.send({ type: 'action', actionData: { action: 'reorder', newHand } });
     } else if (myRole === 'host') {
@@ -384,7 +384,7 @@ export default function App() {
 
   const drawCard = (source) => {
     if (activePlayer !== myPlayerId || turnPhase !== 'draw') return;
-    
+
     if (myRole === 'guest' && hostConnRef.current) {
       hostConnRef.current.send({ type: 'action', actionData: { action: 'draw', source } });
     } else {
@@ -409,11 +409,11 @@ export default function App() {
         }
       }
       drawnCard = nextDeck.pop();
-      logAction(`Player ${playerId.replace('p','')} drew from Deck.`);
+      logAction(`Player ${playerId.replace('p', '')} drew from Deck.`);
     } else {
       if (nextDiscard.length === 0) return;
       drawnCard = nextDiscard.pop();
-      logAction(`Player ${playerId.replace('p','')} drew open card: ${drawnCard.name}.`);
+      logAction(`Player ${playerId.replace('p', '')} drew open card: ${drawnCard.name}.`);
     }
 
     const nextHands = { ...playerHands };
@@ -469,7 +469,7 @@ export default function App() {
     if (checkWinCondition(nextHand)) {
       setWinner(playerId);
       setGameState('game_over');
-      logAction(`🏆 Player ${playerId.replace('p','')} declared win!`);
+      logAction(`🏆 Player ${playerId.replace('p', '')} declared win!`);
 
       const winState = {
         deck,
@@ -486,7 +486,7 @@ export default function App() {
 
     setTurnPhase('draw');
     setActivePlayer(nextActivePlayer);
-    logAction(`Player ${playerId.replace('p','')} discarded ${cardToDiscard.name}.`);
+    logAction(`Player ${playerId.replace('p', '')} discarded ${cardToDiscard.name}.`);
 
     const nextState = {
       deck,
@@ -503,7 +503,7 @@ export default function App() {
   useEffect(() => {
     if (gameMode === 'pc' && activePlayer !== 'p1' && gameState === 'playing') {
       setIsPcThinking(true);
-      setPcStatus(`Player ${activePlayer.replace('p','')} Thinking...`);
+      setPcStatus(`Player ${activePlayer.replace('p', '')} Thinking...`);
 
       const timerDraw = setTimeout(() => {
         const topDiscard = discardPile[discardPile.length - 1];
@@ -514,11 +514,11 @@ export default function App() {
         let nextPcHand = [...pcHand];
 
         const uniquePcRanks = new Set(pcHand.filter(c => !c.isJoker).map(c => c.rank));
-        
+
         if (topDiscard && (topDiscard.isJoker || !uniquePcRanks.has(topDiscard.rank))) {
           drawnCard = nextDiscard.pop();
-          setPcStatus(`Player ${activePlayer.replace('p','')} drew ${topDiscard.name} from Discard.`);
-          logAction(`Player ${activePlayer.replace('p','')} drew open card: ${topDiscard.name}.`);
+          setPcStatus(`Player ${activePlayer.replace('p', '')} drew ${topDiscard.name} from Discard.`);
+          logAction(`Player ${activePlayer.replace('p', '')} drew open card: ${topDiscard.name}.`);
         } else {
           if (nextDeck.length === 0) {
             if (nextDiscard.length > 1) {
@@ -527,7 +527,7 @@ export default function App() {
               nextDiscard = [currentTop];
               logAction('Deck exhausted. Reshuffled discard pile.');
             } else {
-              logAction(`No cards left for Player ${activePlayer.replace('p','')} to draw!`);
+              logAction(`No cards left for Player ${activePlayer.replace('p', '')} to draw!`);
               setIsPcThinking(false);
               setActivePlayer(getNextPlayer(activePlayer));
               setTurnPhase('draw');
@@ -535,12 +535,12 @@ export default function App() {
             }
           }
           drawnCard = nextDeck.pop();
-          setPcStatus(`Player ${activePlayer.replace('p','')} drew from the Deck.`);
-          logAction(`Player ${activePlayer.replace('p','')} drew a card from the deck.`);
+          setPcStatus(`Player ${activePlayer.replace('p', '')} drew from the Deck.`);
+          logAction(`Player ${activePlayer.replace('p', '')} drew a card from the deck.`);
         }
 
         nextPcHand.push(drawnCard);
-        
+
         setDeck(nextDeck);
         setDiscardPile(nextDiscard);
         setPlayerHands(prev => ({ ...prev, [activePlayer]: nextPcHand }));
@@ -548,12 +548,12 @@ export default function App() {
         const timerDiscard = setTimeout(() => {
           const cardToDiscard = evaluatePcDiscard(nextPcHand);
           const finalPcHand = nextPcHand.filter(c => c.id !== cardToDiscard.id);
-          
+
           setPlayerHands(prev => ({ ...prev, [activePlayer]: finalPcHand }));
           const finalDiscardPile = [...nextDiscard, cardToDiscard];
           setDiscardPile(finalDiscardPile);
-          
-          logAction(`Player ${activePlayer.replace('p','')} discarded: ${cardToDiscard.name}.`);
+
+          logAction(`Player ${activePlayer.replace('p', '')} discarded: ${cardToDiscard.name}.`);
           setPcStatus(`Waiting for your turn...`);
           setIsPcThinking(false);
 
@@ -561,7 +561,7 @@ export default function App() {
             setTimeout(() => {
               setWinner(activePlayer);
               setGameState('game_over');
-              logAction(`💻 Player ${activePlayer.replace('p','')} declared victory!`);
+              logAction(`💻 Player ${activePlayer.replace('p', '')} declared victory!`);
             }, 1000);
           } else {
             setActivePlayer(getNextPlayer(activePlayer));
@@ -606,7 +606,7 @@ export default function App() {
 
   const isMyTurn = (activePlayer === myPlayerId);
   const myHand = playerHands[myPlayerId] || [];
-  
+
   const seqStats = getHandSequenceMapping(myHand);
   const selectedDiscardCard = myHand.find(c => c.id === selectedCardId);
 
@@ -620,10 +620,10 @@ export default function App() {
 
   return (
     <div className="h-screen max-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans select-none overflow-hidden">
-      
+
       {gameState === 'welcome' && (
-        <WelcomeScreen 
-          onStartPc={startPcGame} 
+        <WelcomeScreen
+          onStartPc={startPcGame}
           onCreatePvp={createPvpLobby}
           onJoinPvp={joinPvpLobby}
           onStartPvpGame={myRole === 'host' && connectedGuests === numPlayers - 1 ? startPvpGame : null}
@@ -636,29 +636,29 @@ export default function App() {
 
       {gameState === 'playing' && (
         <div className="flex-1 flex flex-col justify-between p-2 md:p-4 relative max-w-7xl mx-auto w-full z-10 overflow-hidden">
-          
+
           <div className="flex justify-between items-center bg-slate-900/80 p-2 md:p-3 rounded-xl border border-slate-800 shadow-md">
             <h2 className="font-black text-sm md:text-xl tracking-wider bg-gradient-to-r from-amber-400 to-emerald-400 bg-clip-text text-transparent">
               ROYAL SEQUENCE {gameMode === 'pvp' && <span className="text-xs text-indigo-400 ml-1 font-bold">(MULTIPLAYER)</span>}
             </h2>
-            
+
             <div className="flex items-center gap-1.5 md:gap-3">
-              <button 
+              <button
                 onClick={() => setShowRules(true)}
-                className="px-2 py-1.5 bg-slate-800 hover:bg-slate-700 text-[10px] md:text-xs font-semibold rounded-lg border border-slate-700 transition cursor-pointer"
+                className="px-1.5 py-1 sm:px-2 sm:py-1.5 bg-slate-800 hover:bg-slate-700 text-[10px] md:text-xs font-semibold rounded-lg border border-slate-700 transition cursor-pointer"
               >
                 Rules
               </button>
-              
+
               {gameMode === 'pvp' && (
                 <div className="relative">
-                  <button 
+                  <button
                     onClick={() => setShowQuickChat(!showQuickChat)}
-                    className="px-2 py-1.5 bg-indigo-600 hover:bg-indigo-500 text-[10px] md:text-xs font-black rounded-lg border border-indigo-500 text-slate-100 transition cursor-pointer"
+                    className="px-1.5 py-1 sm:px-2 sm:py-1.5 bg-indigo-600 hover:bg-indigo-500 text-[10px] md:text-xs font-black rounded-lg border border-indigo-500 text-slate-100 transition cursor-pointer"
                   >
-                    Chat 💬
+                    <span className="hidden sm:inline">Chat </span>💬
                   </button>
-                  
+
                   {showQuickChat && (
                     <div className="absolute right-0 top-9 bg-slate-900 border border-slate-800 p-2 rounded-xl shadow-2xl z-50 w-48 grid grid-cols-1 gap-1">
                       {QUICK_CHAT_OPTIONS.map((phrase, idx) => (
@@ -675,15 +675,15 @@ export default function App() {
                 </div>
               )}
 
-              <button 
+              <button
                 onClick={() => setShowLogs(!showLogs)}
-                className={`px-2 py-1.5 text-[10px] md:text-xs font-semibold rounded-lg border transition cursor-pointer ${showLogs ? 'bg-indigo-600/30 border-indigo-500 text-indigo-200' : 'bg-slate-800 hover:bg-slate-700 border-slate-700'}`}
+                className={`px-1.5 py-1 sm:px-2 sm:py-1.5 text-[10px] md:text-xs font-semibold rounded-lg border transition cursor-pointer ${showLogs ? 'bg-indigo-600/30 border-indigo-500 text-indigo-200' : 'bg-slate-800 hover:bg-slate-700 border-slate-700'}`}
               >
                 Logs
               </button>
-              <button 
+              <button
                 onClick={quitToMainMenu}
-                className="px-2 py-1.5 bg-rose-600/20 hover:bg-rose-600/30 border border-rose-500/30 text-rose-300 text-[10px] md:text-xs font-semibold rounded-lg transition cursor-pointer"
+                className="px-1.5 py-1 sm:px-2 sm:py-1.5 bg-rose-600/20 hover:bg-rose-600/30 border border-rose-500/30 text-rose-300 text-[10px] md:text-xs font-semibold rounded-lg transition cursor-pointer"
               >
                 Quit
               </button>
@@ -698,7 +698,7 @@ export default function App() {
               {[...Array(numPlayers)].map((_, i) => {
                 const pId = `p${i + 1}`;
                 if (pId === myPlayerId) return null; // Don't show myself here
-                
+
                 const isOpponentTurn = activePlayer === pId;
                 const handSize = playerHands[pId]?.length || 0;
                 const chatMsg = chatMessages[pId];
@@ -706,7 +706,7 @@ export default function App() {
                 return (
                   <div key={pId} className={`flex flex-col items-center gap-1 transition-all ${isOpponentTurn ? 'scale-110 opacity-100' : 'scale-90 opacity-60'}`}>
                     {chatMsg && (
-                      <div className="absolute -bottom-8 bg-white text-slate-900 px-2 py-1 rounded text-[10px] font-bold shadow-lg animate-bounce z-50 whitespace-nowrap">
+                      <div className="absolute -bottom-8 bg-white text-slate-900 px-2 py-1 rounded text-[10px] font-bold shadow-lg animate-bounce z-[9999] whitespace-nowrap">
                         {chatMsg}
                       </div>
                     )}
@@ -731,9 +731,15 @@ export default function App() {
               })}
             </div>
 
+            <SequenceTracker
+              mapping={seqStats.mapping}
+              redundantCards={seqStats.redundantCards}
+              unusedJokers={seqStats.unusedJokers}
+            />
+
             <div className="my-2 flex justify-center items-center gap-6 md:gap-14 z-10 relative flex-1 min-h-0">
               <div className="flex flex-col items-center gap-1.5 scale-90 sm:scale-100">
-                <button 
+                <button
                   onClick={() => drawCard('deck')}
                   disabled={!isMyTurn || turnPhase !== 'draw'}
                   className={`playing-card-wrapper card-back-pattern deck-stack-depth flex items-center justify-center border-4 border-white select-none transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none ${isMyTurn && turnPhase === 'draw' ? 'glow-active-zone border-blue-500 cursor-pointer' : ''}`}
@@ -748,7 +754,7 @@ export default function App() {
 
               <div className="flex flex-col items-center justify-center max-w-sm text-center bg-slate-950/80 p-3 rounded-xl border border-slate-800/85 backdrop-blur-md shadow-xl min-w-[170px] sm:min-w-[250px] scale-90 sm:scale-100">
                 <span className="text-[9px] font-bold text-slate-400 tracking-wide uppercase mb-1">Table Actions</span>
-                
+
                 {isMyTurn && turnPhase === 'draw' && (
                   <p className="text-xs text-blue-400 font-bold animate-pulse px-1 leading-snug">
                     Draw from Deck or Discard pile!
@@ -787,15 +793,15 @@ export default function App() {
               </div>
 
               <div className="flex flex-col items-center gap-1.5 scale-90 sm:scale-100">
-                <button 
+                <button
                   onClick={() => drawCard('discard')}
                   disabled={!isMyTurn || turnPhase !== 'draw' || discardPile.length === 0}
                   className={`playing-card-wrapper bg-slate-900 border-2 border-slate-700/60 shadow-lg flex items-center justify-center relative select-none disabled:opacity-40 disabled:cursor-not-allowed ${isMyTurn && turnPhase === 'draw' && discardPile.length > 0 ? 'glow-active-zone cursor-pointer border-blue-500' : ''}`}
                 >
                   {discardPile.length > 0 ? (
-                    <img 
-                      src={discardPile[discardPile.length - 1].svg} 
-                      alt={discardPile[discardPile.length - 1].name} 
+                    <img
+                      src={discardPile[discardPile.length - 1].svg}
+                      alt={discardPile[discardPile.length - 1].name}
                       className="w-full h-full object-contain rounded-lg"
                     />
                   ) : (
@@ -812,12 +818,6 @@ export default function App() {
                 <span className="text-[9px] sm:text-[10px] font-bold text-amber-300 tracking-wider">DISCARD PILE</span>
               </div>
             </div>
-
-            <SequenceTracker 
-              mapping={seqStats.mapping}
-              redundantCards={seqStats.redundantCards}
-              unusedJokers={seqStats.unusedJokers}
-            />
           </div>
 
           <div className="flex flex-col items-center gap-1.5 z-10 relative">

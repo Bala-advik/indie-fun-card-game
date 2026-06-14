@@ -15,10 +15,11 @@ export default function Card({
 }) {
   const centerIndex = (totalCards - 1) / 2;
   const offset = index - centerIndex;
-  
+
   // Fanning formula
   const rotation = offset * (totalCards > 13 ? 2.2 : 2.5);
-  const translateValY = Math.pow(Math.abs(offset), 2) * (totalCards > 13 ? 1.25 : 1.5);
+  // Flatten the Y curve so the outer cards don't drop too low, creating a wider desktop-like arc
+  const translateValY = Math.pow(Math.abs(offset), 2) * (totalCards > 13 ? 1.0 : 1.15);
   const translateValX = offset * -2;
 
   const style = {
@@ -46,25 +47,25 @@ export default function Card({
       onDrop={(e) => onDrop(e, card.id)}
       onClick={handleCardClick}
       onDoubleClick={handleCardDoubleClick}
-      className={`playing-card-wrapper w-[76px] xs:w-[85px] sm:w-[100px] h-[106px] xs:h-[119px] sm:h-[140px] rounded-xl overflow-hidden bg-white shadow-xl ${isSelected ? 'selected' : ''} ${isNewlyDrawn ? 'ring-4 ring-blue-500 ring-offset-2 ring-offset-slate-900 shadow-[0_0_20px_rgba(59,130,246,0.6)]' : ''}`}
+      className={`playing-card-wrapper shrink-0 rounded-xl overflow-hidden bg-white shadow-xl ${isSelected ? 'selected' : ''} ${isNewlyDrawn ? 'ring-4 ring-blue-500 ring-offset-2 ring-offset-slate-900 shadow-[0_0_20px_rgba(59,130,246,0.6)]' : ''}`}
       style={style}
     >
-      <img 
-        src={card.svg} 
-        alt={card.name} 
+      <img
+        src={card.svg}
+        alt={card.name}
         className="w-full h-full object-contain select-none"
       />
-      
+
       {/* Newly Drawn Tag */}
       {isNewlyDrawn && (
-        <span className="absolute top-1 left-1 bg-blue-600 text-slate-100 text-[8px] sm:text-[10px] font-black px-1.5 py-0.5 rounded shadow border border-blue-400 uppercase tracking-wider">
+        <span className="absolute top-1 right-1 bg-blue-600 text-slate-100 text-[7px] sm:text-[9px] font-black px-1 py-0.5 rounded shadow border border-blue-400 uppercase tracking-wider z-10">
           New
         </span>
       )}
 
       {/* Discard Overlay Action Button on Card (Tap to confirm) */}
       {turnState === 'player_discard' && isSelected && (
-        <div 
+        <div
           onClick={(e) => {
             e.stopPropagation();
             onDiscard(card.id);

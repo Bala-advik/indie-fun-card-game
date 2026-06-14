@@ -64,12 +64,22 @@ export default function WelcomeScreen({ onStartPc, onCreatePvp, onJoinPvp, onSta
                 />
                 <button
                   onClick={() => {
-                    navigator.clipboard.writeText(`${window.location.origin}${window.location.pathname}?room=${roomCode}`);
-                    alert('Invite link copied to clipboard!');
+                    const link = `${window.location.origin}${window.location.pathname}?room=${roomCode}`;
+                    if (navigator.share) {
+                      navigator.share({
+                        title: 'Royal Sequence',
+                        text: 'Join my Royal Sequence multiplayer game!',
+                        url: link
+                      }).catch(console.error);
+                    } else {
+                      navigator.clipboard.writeText(link);
+                      alert('Invite link copied to clipboard!');
+                    }
                   }}
-                  className="px-2.5 py-1 bg-emerald-500 text-slate-950 font-black rounded hover:bg-emerald-400 text-[10px]"
+                  className="px-2.5 py-1 bg-emerald-500 text-slate-950 font-black rounded hover:bg-emerald-400 text-[10px] uppercase tracking-wider"
                 >
-                  COPY
+                  <span className="hidden sm:inline">Copy</span>
+                  <span className="sm:hidden">Share</span>
                 </button>
               </div>
               <p className="text-[10px] text-slate-500">Or share the code: <span className="font-mono font-bold text-amber-400">{roomCode}</span></p>
