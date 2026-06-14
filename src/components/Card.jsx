@@ -12,7 +12,9 @@ export default function Card({
   onDragStart,
   onDragOver,
   onDrop,
-  isSpacer
+  onDropToMeldMobile,
+  isSpacer,
+  showDiscardOverlay
 }) {
   const centerIndex = (totalCards - 1) / 2;
   const offset = index - centerIndex;
@@ -29,8 +31,10 @@ export default function Card({
   };
 
   const handleCardClick = () => {
-    if (turnState === 'player_discard') {
-      onSelect(card.id);
+    if (showDiscardOverlay) {
+      if (turnState === 'player_discard') onSelect(card.id);
+    } else {
+      if (turnState !== 'opponent_turn') onSelect(card.id);
     }
   };
 
@@ -49,14 +53,16 @@ export default function Card({
 
   const handleTouchEnd = (e) => {
     const touch = e.changedTouches[0];
-    const elem = document.elementFromPoint(touch.clientX, touch.clientY);
-    const targetCard = elem?.closest('.playing-card-wrapper');
-    if (targetCard) {
-      const targetId = targetCard.getAttribute('data-card-id');
-      if (targetId) {
-        onDrop({ preventDefault: () => {} }, targetId);
-      }
-    } else {
+    const dropTarget = document.elementFromPoint(touch.clientX, touch.clientY);
+    const meldTarget = dropTarget?.closest('[data-meld-index]');
+    const targetCardId = dropTarget?.closest('.playing-card-wrapper')?.getAttribute('data-card-id');
+    
+    if (meldTarget && onDropToMeldMobile) {
+      const meldIndex = parseInt(meldTarget.getAttribute('data-meld-index'), 10);
+      onDropToMeldMobile(card.id, meldIndex);
+    } else if (targetCardId && targetCardId !== card.id) {
+      onDrop({ preventDefault: () => {} }, targetCardId);
+    } else if (dropTarget) {
       onDrop({ preventDefault: () => {} }, null);
     }
   };
@@ -89,7 +95,7 @@ export default function Card({
       )}
 
       {/* Discard Overlay Action Button on Card (Tap to confirm) */}
-      {turnState === 'player_discard' && isSelected && (
+      {showDiscardOverlay && turnState === 'player_discard' && isSelected && (
         <div
           onClick={(e) => {
             e.stopPropagation();

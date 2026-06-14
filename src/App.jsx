@@ -55,12 +55,15 @@ export default function App() {
   const [numPlayers, setNumPlayers] = useState(2);
   const [deck, setDeck] = useState([]);
   const [discardPile, setDiscardPile] = useState([]);
+  const pcActionInProgress = useRef(false);
   const [playerHands, setPlayerHands] = useState({ p1: [], p2: [], p3: [], p4: [] });
+  const [playerMelds, setPlayerMelds] = useState({ p1: [[], [], []], p2: [[], [], []], p3: [[], [], []], p4: [[], [], []] });
 
   const [activePlayer, setActivePlayer] = useState('p1');
   const [turnPhase, setTurnPhase] = useState('draw');
+  const [selectedCardIds, setSelectedCardIds] = useState([]);
   const [newlyDrawnCardId, setNewlyDrawnCardId] = useState(null);
-  const [selectedCardId, setSelectedCardId] = useState(null);
+  const [declareError, setDeclareError] = useState(null);
 
   const [winner, setWinner] = useState(null);
 
@@ -146,7 +149,8 @@ export default function App() {
     setActivePlayer('p1');
     setTurnPhase('draw');
     setNewlyDrawnCardId(null);
-    setSelectedCardId(null);
+    setSelectedCardIds([]);
+    setDeclareError(null);
     setWinner(null);
 
     setGameState('playing');
@@ -218,6 +222,7 @@ export default function App() {
 
     const freshDeck = shuffle(createDeck(numPlayers));
     const newHands = { p1: [], p2: [], p3: [], p4: [] };
+    const newMelds = { p1: [[], [], []], p2: [[], [], []], p3: [[], [], []], p4: [[], [], []] };
 
     const handSize = ruleset === 'rummy_lite' ? 10 : 13;
 
@@ -232,6 +237,7 @@ export default function App() {
       deck: freshDeck,
       discardPile: [firstDiscard],
       playerHands: newHands,
+      playerMelds: newMelds,
       activePlayer: 'p1',
       turnPhase: 'draw',
       newlyDrawnCardId: null,
@@ -241,11 +247,14 @@ export default function App() {
     setDeck(freshDeck);
     setDiscardPile([firstDiscard]);
     setPlayerHands(newHands);
+    setPlayerMelds(newMelds);
     setActivePlayer('p1');
     setTurnPhase('draw');
     setNewlyDrawnCardId(null);
-    setSelectedCardId(null);
+    setSelectedCardIds([]);
+    setDeclareError(null);
     setWinner(null);
+    setGameLogs([]);
     setGameState('playing');
 
     broadcastState(initialState);
@@ -315,10 +324,13 @@ export default function App() {
     if (s.ruleset) setRuleset(s.ruleset);
     setDeck(s.deck);
     setDiscardPile(s.discardPile);
-    setPlayerHands(s.playerHands);
-    setActivePlayer(s.activePlayer);
+    if (s.playerHands) setPlayerHands(s.playerHands);
+    if (s.playerMelds) setPlayerMelds(s.playerMelds);
+    if (s.activePlayer) setActivePlayer(s.activePlayer);
     setTurnPhase(s.turnPhase);
     setNewlyDrawnCardId(s.newlyDrawnCardId);
+    setSelectedCardIds([]);
+    setDeclareError(null);
     setWinner(s.winner);
 
     if (s.winner) {
@@ -369,17 +381,23 @@ export default function App() {
         executeDrawCard(nextAction.guestId, nextAction.actionData.source);
       } else if (nextAction.actionData.action === 'discard') {
         executeDiscardCard(nextAction.guestId, nextAction.actionData.cardId);
+      } else if (nextAction.actionData.action === 'declare') {
+        executeDeclare(nextAction.guestId, nextAction.actionData.cardId);
       } else if (nextAction.actionData.action === 'reorder') {
         setPlayerHands(prev => {
           const next = { ...prev, [nextAction.guestId]: nextAction.actionData.newHand };
-          broadcastState({ deck, discardPile, playerHands: next, activePlayer, turnPhase, newlyDrawnCardId, winner });
+          broadcastState({ deck, discardPile, playerHands: next, playerMelds, activePlayer, turnPhase, newlyDrawnCardId, winner });
           return next;
         });
+      } else if (nextAction.actionData.action === 'drop_meld') {
+        handleDropToMeld(nextAction.guestId, nextAction.actionData.cardId, nextAction.actionData.meldIndex);
+      } else if (nextAction.actionData.action === 'restore_meld') {
+        handleRestoreFromMeld(nextAction.guestId, nextAction.actionData.cardId, nextAction.actionData.meldIndex);
       }
 
       setActionQueue(prev => prev.slice(1));
     }
-  }, [actionQueue, deck, discardPile, playerHands, activePlayer, turnPhase, newlyDrawnCardId, winner]);
+  }, [actionQueue, deck, discardPile, playerHands, playerMelds, activePlayer, turnPhase, newlyDrawnCardId, winner]);
 
   const handlePlayerSort = (type) => {
     const hand = [...playerHands[myPlayerId]];
@@ -394,7 +412,45 @@ export default function App() {
     if (myRole === 'guest' && hostConnRef.current) {
       hostConnRef.current.send({ type: 'action', actionData: { action: 'reorder', newHand } });
     } else if (myRole === 'host') {
-      broadcastState({ deck, discardPile, playerHands: { ...playerHands, [myPlayerId]: newHand }, activePlayer, turnPhase, newlyDrawnCardId, winner });
+      broadcastState({ deck, discardPile, playerHands: { ...playerHands, [myPlayerId]: newHand }, playerMelds, activePlayer, turnPhase, newlyDrawnCardId, winner });
+    }
+  };
+
+  const handleDropToMeld = (playerId, cardId, meldIndex) => {
+    const hand = playerHands[playerId];
+    const card = hand.find(c => c.id === cardId);
+    if (!card) return;
+
+    const newHands = { ...playerHands, [playerId]: hand.filter(c => c.id !== cardId) };
+    const newMelds = { ...playerMelds };
+    newMelds[playerId][meldIndex] = [...newMelds[playerId][meldIndex], card];
+
+    setPlayerHands(newHands);
+    setPlayerMelds(newMelds);
+
+    if (playerId === myPlayerId && myRole !== 'host') {
+      hostConnRef.current.send({ type: 'action', actionData: { action: 'drop_meld', cardId, meldIndex } });
+    } else if (myRole === 'host') {
+      broadcastState({ deck, discardPile, playerHands: newHands, playerMelds: newMelds, activePlayer, turnPhase, newlyDrawnCardId, winner });
+    }
+  };
+
+  const handleRestoreFromMeld = (playerId, cardId, meldIndex) => {
+    const melds = playerMelds[playerId];
+    const card = melds[meldIndex].find(c => c.id === cardId);
+    if (!card) return;
+
+    const newMelds = { ...playerMelds };
+    newMelds[playerId][meldIndex] = newMelds[playerId][meldIndex].filter(c => c.id !== cardId);
+    const newHands = { ...playerHands, [playerId]: [...playerHands[playerId], card] };
+
+    setPlayerHands(newHands);
+    setPlayerMelds(newMelds);
+
+    if (playerId === myPlayerId && myRole !== 'host') {
+      hostConnRef.current.send({ type: 'action', actionData: { action: 'restore_meld', cardId, meldIndex } });
+    } else if (myRole === 'host') {
+      broadcastState({ deck, discardPile, playerHands: newHands, playerMelds: newMelds, activePlayer, turnPhase, newlyDrawnCardId, winner });
     }
   };
 
@@ -409,6 +465,11 @@ export default function App() {
   };
 
   const executeDrawCard = (playerId, source) => {
+    if (activePlayer !== playerId || turnPhase !== 'draw') {
+      console.warn(`Blocked invalid draw: expected ${activePlayer} in draw phase, got ${playerId} in ${turnPhase}`);
+      return;
+    }
+
     let drawnCard = null;
     let nextDeck = [...deck];
     let nextDiscard = [...discardPile];
@@ -439,13 +500,13 @@ export default function App() {
     setDiscardPile(nextDiscard);
     setPlayerHands(nextHands);
     setNewlyDrawnCardId(drawnCard.id);
-    if (playerId === myPlayerId) setSelectedCardId(drawnCard.id);
     setTurnPhase('discard');
 
     const nextState = {
       deck: nextDeck,
       discardPile: nextDiscard,
       playerHands: nextHands,
+      playerMelds,
       activePlayer,
       turnPhase: 'discard',
       newlyDrawnCardId: drawnCard.id,
@@ -464,7 +525,144 @@ export default function App() {
     }
   };
 
+  const toggleCardSelection = (cardId) => {
+    if (activePlayer !== myPlayerId) return;
+    setDeclareError(null);
+    if (ruleset === 'royal_sequence') {
+      setSelectedCardIds([cardId]);
+    } else {
+      setSelectedCardIds(prev => {
+        if (prev.includes(cardId)) return prev.filter(id => id !== cardId);
+        return [...prev, cardId];
+      });
+    }
+  };
+
+  const handleMeldSelection = () => {
+    setDeclareError(null);
+    if (selectedCardIds.length !== 3 && selectedCardIds.length !== 4) {
+      setDeclareError('Select exactly 3 or 4 cards to meld.');
+      return;
+    }
+
+    const hand = playerHands[myPlayerId];
+    const selectedCards = hand.filter(c => selectedCardIds.includes(c.id));
+    
+    // Sort selected cards left to right as they appear in hand
+    selectedCards.sort((a, b) => hand.indexOf(a) - hand.indexOf(b));
+
+    if (!isValidMeld(selectedCards)) {
+      setDeclareError('Selected cards do not form a valid run or set.');
+      return;
+    }
+
+    const myMelds = [...playerMelds[myPlayerId]];
+    // Find the first empty slot that matches the selected cards length
+    let targetSlotIndex = -1;
+    const requiredLength = selectedCards.length;
+    
+    // Capacities are 4, 3, 3
+    const capacities = [4, 3, 3];
+    for (let i = 0; i < 3; i++) {
+      if (myMelds[i].length === 0 && capacities[i] === requiredLength) {
+        targetSlotIndex = i;
+        break;
+      }
+    }
+
+    if (targetSlotIndex === -1) {
+      setDeclareError(`No empty ${requiredLength}-card meld slot available in the objective area.`);
+      return;
+    }
+
+    // Move them
+    const newHand = hand.filter(c => !selectedCardIds.includes(c.id));
+    myMelds[targetSlotIndex] = selectedCards;
+
+    const newHands = { ...playerHands, [myPlayerId]: newHand };
+    const newMeldsState = { ...playerMelds, [myPlayerId]: myMelds };
+
+    setPlayerHands(newHands);
+    setPlayerMelds(newMeldsState);
+    setSelectedCardIds([]);
+
+    if (myRole === 'guest' && hostConnRef.current) {
+      // Send individual drops for each card (simple hack to reuse drop_meld)
+      selectedCards.forEach(c => {
+        hostConnRef.current.send({ type: 'action', actionData: { action: 'drop_meld', cardId: c.id, meldIndex: targetSlotIndex } });
+      });
+    } else if (myRole === 'host') {
+      broadcastState({ deck, discardPile, playerHands: newHands, playerMelds: newMeldsState, activePlayer, turnPhase, newlyDrawnCardId, winner });
+    }
+  };
+
+  const declareWin = (cardId) => {
+    setDeclareError(null);
+    if (activePlayer !== myPlayerId || turnPhase !== 'discard') return;
+
+    const myMelds = playerMelds[myPlayerId];
+    if (myMelds[0].length !== 4 || myMelds[1].length !== 3 || myMelds[2].length !== 3) {
+      setDeclareError(`Invalid: Form the 4-card and two 3-card melds in the objective area first.`);
+      return;
+    }
+
+    const flatMelds = [...myMelds[0], ...myMelds[1], ...myMelds[2]];
+    const result = validateArrangedRummyWin(flatMelds);
+    
+    if (!result.isWin) {
+      setDeclareError(`Invalid Declaration: ${result.error}`);
+      return;
+    }
+
+    if (myRole === 'guest' && hostConnRef.current) {
+      hostConnRef.current.send({ type: 'action', actionData: { action: 'declare', cardId } });
+    } else {
+      executeDeclare(myPlayerId, cardId);
+    }
+  };
+
+  const executeDeclare = (playerId, cardId) => {
+    if (activePlayer !== playerId || turnPhase !== 'discard') {
+      console.warn(`Blocked invalid declare`);
+      return;
+    }
+
+    const hand = playerHands[playerId];
+    const cardToDiscard = hand.find(c => c.id === cardId);
+    if (!cardToDiscard) return;
+
+    const nextHand = hand.filter(c => c.id !== cardId);
+    const nextDiscard = [...discardPile, cardToDiscard];
+    const nextHands = { ...playerHands, [playerId]: nextHand };
+
+    setPlayerHands(nextHands);
+    setDiscardPile(nextDiscard);
+    setSelectedCardIds([]);
+    setNewlyDrawnCardId(null);
+
+    setWinner(playerId);
+    setGameState('game_over');
+    logAction(`🏆 Player ${playerId.replace('p', '')} declared a valid Rummy Lite win!`);
+
+    const winState = {
+      deck,
+      discardPile: nextDiscard,
+      playerHands: nextHands,
+      playerMelds,
+      activePlayer: playerId,
+      turnPhase: 'game_over',
+      newlyDrawnCardId: null,
+      winner: playerId
+    };
+    broadcastState(winState);
+  };
+
   const executeDiscardCard = (playerId, cardId) => {
+    if (activePlayer !== playerId || turnPhase !== 'discard') {
+      console.warn(`Blocked invalid discard: expected ${activePlayer} in discard phase, got ${playerId} in ${turnPhase}`);
+      return;
+    }
+
     const hand = playerHands[playerId];
     const cardToDiscard = hand.find(c => c.id === cardId);
     if (!cardToDiscard) return;
@@ -477,14 +675,14 @@ export default function App() {
 
     setPlayerHands(nextHands);
     setDiscardPile(nextDiscard);
-    if (playerId === myPlayerId) {
-      setSelectedCardId(null);
-    }
+    setSelectedCardIds([]);
     setNewlyDrawnCardId(null);
 
     let isWin = false;
     if (ruleset === 'rummy_lite') {
-      isWin = validateRummyWin(nextHand).isWin;
+      if (gameMode !== 'pvp' && playerId !== myPlayerId) {
+        isWin = validateRummyWin(nextHand).isWin;
+      }
     } else {
       isWin = checkWinCondition(nextHand);
     }
@@ -498,6 +696,7 @@ export default function App() {
         deck,
         discardPile: nextDiscard,
         playerHands: nextHands,
+        playerMelds,
         activePlayer: nextActivePlayer,
         turnPhase: 'draw',
         newlyDrawnCardId: null,
@@ -515,6 +714,7 @@ export default function App() {
       deck,
       discardPile: nextDiscard,
       playerHands: nextHands,
+      playerMelds,
       activePlayer: nextActivePlayer,
       turnPhase: 'draw',
       newlyDrawnCardId: null,
@@ -525,6 +725,8 @@ export default function App() {
 
   useEffect(() => {
     if (gameMode === 'pc' && activePlayer !== 'p1' && gameState === 'playing') {
+      if (pcActionInProgress.current) return;
+      pcActionInProgress.current = true;
       setIsPcThinking(true);
       setPcStatus(`Player ${activePlayer.replace('p', '')} Thinking...`);
 
@@ -552,6 +754,7 @@ export default function App() {
             } else {
               logAction(`No cards left for Player ${activePlayer.replace('p', '')} to draw!`);
               setIsPcThinking(false);
+              pcActionInProgress.current = false;
               setActivePlayer(getNextPlayer(activePlayer));
               setTurnPhase('draw');
               return;
@@ -579,6 +782,7 @@ export default function App() {
           logAction(`Player ${activePlayer.replace('p', '')} discarded: ${cardToDiscard.name}.`);
           setPcStatus(`Waiting for your turn...`);
           setIsPcThinking(false);
+          pcActionInProgress.current = false;
 
           let isPcWin = false;
           if (ruleset === 'rummy_lite') {
@@ -638,7 +842,6 @@ export default function App() {
   const myHand = playerHands[myPlayerId] || [];
 
   const seqStats = getHandSequenceMapping(myHand);
-  const selectedDiscardCard = myHand.find(c => c.id === selectedCardId);
 
   const quitToMainMenu = () => {
     setShowQuitConfirm(true);
@@ -726,11 +929,10 @@ export default function App() {
           <div className="flex-1 bg-gradient-to-b from-emerald-900/95 to-emerald-950/95 rounded-[1.5rem] border-4 border-amber-950/80 shadow-[inset_0_4px_30px_rgba(0,0,0,0.7),0_10px_35px_rgba(0,0,0,0.5)] p-3 md:p-5 flex flex-col justify-between relative overflow-hidden my-3 min-h-0">
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[350px] bg-emerald-500/10 rounded-full blur-[120px] pointer-events-none z-0"></div>
 
-            {/* Top Area: Opponents list & turn indicator */}
             <div className="flex justify-center items-start gap-4 z-10 relative mt-2">
               {[...Array(numPlayers)].map((_, i) => {
                 const pId = `p${i + 1}`;
-                if (pId === myPlayerId) return null; // Don't show myself here
+                if (pId === myPlayerId) return null; 
 
                 const isOpponentTurn = activePlayer === pId;
                 const handSize = playerHands[pId]?.length || 0;
@@ -752,7 +954,6 @@ export default function App() {
                       )}
                       <span className="font-bold">{gameMode === 'pc' ? 'Computer' : 'Player'} {i + 1}</span>
                     </div>
-                    {/* Small visual card icon for hand */}
                     <div className="relative mt-1">
                       <div className="w-8 h-12 card-back-pattern-red rounded shadow-md border-[1.5px] border-slate-200"></div>
                       <div className="absolute -bottom-2 -right-2 bg-slate-900 border border-slate-700 text-slate-300 text-[9px] font-bold px-1.5 py-0.5 rounded-full shadow">
@@ -765,7 +966,12 @@ export default function App() {
             </div>
 
             {ruleset === 'rummy_lite' ? (
-              <RummyTracker hand={myHand} />
+              <RummyTracker 
+                hand={myHand} 
+                melds={playerMelds[myPlayerId] || [[], [], []]}
+                onDropToMeld={(cardId, meldIndex) => handleDropToMeld(myPlayerId, cardId, meldIndex)}
+                onRestoreFromMeld={(cardId, meldIndex) => handleRestoreFromMeld(myPlayerId, cardId, meldIndex)}
+              />
             ) : (
               <SequenceTracker
                 mapping={seqStats.mapping}
@@ -800,19 +1006,24 @@ export default function App() {
 
                 {isMyTurn && turnPhase === 'discard' && (
                   <div className="space-y-2 w-full px-1">
-                    <p className="text-[10px] text-amber-400 font-bold truncate">
-                      {selectedDiscardCard ? `Selected: ${selectedDiscardCard.name}` : "Select a card in your hand to discard."}
-                    </p>
-                    {selectedCardId ? (
+                    {selectedCardIds.length > 0 ? (
+                      <p className="text-[10px] text-amber-400 font-bold truncate">
+                        Selected: {selectedCardIds.length} card{selectedCardIds.length > 1 ? 's' : ''}
+                      </p>
+                    ) : (
+                      <p className="text-[10px] text-amber-400 font-bold truncate">Select a card in your hand to discard.</p>
+                    )}
+                    
+                    {selectedCardIds.length === 1 ? (
                       <button
-                        onClick={() => discardCard(selectedCardId)}
+                        onClick={() => discardCard(selectedCardIds[0])}
                         className="w-full py-1.5 bg-gradient-to-r from-amber-500 to-yellow-500 text-slate-950 font-black rounded-lg shadow-[0_2px_10px_rgba(245,158,11,0.2)] hover:scale-[1.02] active:scale-95 transition-all text-[10px] tracking-wide uppercase cursor-pointer"
                       >
                         Discard Card
                       </button>
                     ) : (
                       <div className="py-1.5 bg-slate-900/60 text-slate-500 font-bold rounded-lg border border-slate-850 border-dashed text-[10px] uppercase select-none">
-                        No Card Selected
+                        {selectedCardIds.length > 1 ? "Select only 1 to discard" : "No Card Selected"}
                       </div>
                     )}
                   </div>
@@ -858,33 +1069,51 @@ export default function App() {
           </div>
 
           <div className="flex flex-col items-center gap-1.5 z-10 relative">
+            {declareError && (
+              <div className="absolute -top-16 left-1/2 -translate-x-1/2 bg-red-600/90 text-white font-bold px-4 py-2 rounded-xl text-xs sm:text-sm whitespace-nowrap shadow-lg animate-bounce border border-red-400 z-50">
+                {declareError}
+              </div>
+            )}
             <div className="w-full flex justify-between items-center px-1">
               <div className="flex gap-1.5">
-                <button
-                  onClick={() => handlePlayerSort('rank')}
-                  className="px-2.5 py-1 bg-slate-900/80 hover:bg-slate-800 text-[9px] md:text-xs font-bold rounded-lg border border-slate-800 text-slate-300 transition cursor-pointer"
-                >
+                <button onClick={() => handlePlayerSort('rank')} className="px-3 py-1.5 md:px-4 md:py-2 bg-slate-900 border border-slate-700 text-slate-300 font-bold rounded-xl text-[10px] md:text-sm shadow-md hover:bg-slate-800 transition">
                   Sort Rank
                 </button>
-                <button
-                  onClick={() => handlePlayerSort('suit')}
-                  className="px-2.5 py-1 bg-slate-900/80 hover:bg-slate-800 text-[9px] md:text-xs font-bold rounded-lg border border-slate-800 text-slate-300 transition cursor-pointer"
-                >
+                <button onClick={() => handlePlayerSort('suit')} className="px-3 py-1.5 md:px-4 md:py-2 bg-slate-900 border border-slate-700 text-slate-300 font-bold rounded-xl text-[10px] md:text-sm shadow-md hover:bg-slate-800 transition">
                   Sort Suit
                 </button>
+                
                 {ruleset === 'rummy_lite' && (
                   <button
                     onClick={() => handlePlayerSort('melds')}
-                    className="px-2.5 py-1 bg-slate-900/80 hover:bg-slate-800 text-[9px] md:text-xs font-bold rounded-lg border border-slate-800 text-amber-400 transition cursor-pointer shadow-[0_0_8px_rgba(245,158,11,0.2)]"
+                    className="px-3 py-1.5 md:px-4 md:py-2 bg-slate-900 border border-amber-600 text-amber-500 font-bold rounded-xl text-[10px] md:text-sm shadow-md hover:bg-slate-800 transition"
                   >
                     Sort Melds
+                  </button>
+                )}
+
+                {ruleset === 'rummy_lite' && isMyTurn && (selectedCardIds.length === 3 || selectedCardIds.length === 4) && (
+                  <button 
+                    onClick={handleMeldSelection} 
+                    className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-black rounded-xl text-xs md:text-sm shadow-[0_0_15px_rgba(37,99,235,0.5)] animate-pulse transition"
+                  >
+                    MELD CARDS
+                  </button>
+                )}
+
+                {ruleset === 'rummy_lite' && isMyTurn && turnPhase === 'discard' && (
+                  <button 
+                    onClick={() => selectedCardIds.length === 1 ? declareWin(selectedCardIds[0]) : setDeclareError('Select 1 card to discard to declare win!')} 
+                    className={`px-4 py-2 font-black rounded-xl text-xs md:text-sm transition ${selectedCardIds.length === 1 ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-[0_0_15px_rgba(16,185,129,0.5)] animate-pulse' : 'bg-slate-700 text-slate-400 opacity-50'}`}
+                  >
+                    DECLARE WIN
                   </button>
                 )}
               </div>
 
               <div className="text-[9px] md:text-xs text-slate-400 font-medium bg-slate-900/60 px-2.5 py-1 rounded-lg border border-slate-800">
                 {isMyTurn && turnPhase === 'discard' ? (
-                  <span className="text-amber-400 font-bold">💡 Double-tap card to discard it</span>
+                  <span className="text-amber-400 font-bold">💡 Click card to select, then Discard/Meld</span>
                 ) : (
                   <span>💡 Drag cards to rearrange them</span>
                 )}
@@ -900,22 +1129,24 @@ export default function App() {
                   card={card}
                   index={index}
                   totalCards={myHand.length}
-                  isSelected={selectedCardId === card.id}
+                  isSelected={selectedCardIds.includes(card.id)}
                   isNewlyDrawn={card.id === newlyDrawnCardId}
                   turnState={isMyTurn ? (turnPhase === 'discard' ? 'player_discard' : 'player_draw') : 'opponent_turn'}
-                  isSpacer={ruleset === 'rummy_lite' && (index === 4 || index === 7)}
-                  onSelect={setSelectedCardId}
+                  isSpacer={ruleset === 'rummy_lite' && (index === 3 || index === 6)}
+                  showDiscardOverlay={ruleset === 'royal_sequence'}
+                  onSelect={toggleCardSelection}
                   onDiscard={discardCard}
                   onDragStart={handleDragStart}
                   onDragOver={handleDragOver}
                   onDrop={handleDrop}
+                  onDropToMeldMobile={(cardId, meldIndex) => handleDropToMeld(myPlayerId, cardId, meldIndex)}
                 />
               ))}
             </div>
           </div>
 
           {showLogs && <GameLogs logs={gameLogs} onClose={() => setShowLogs(false)} />}
-          {showRules && <RulesModal onClose={() => setShowRules(false)} />}
+          {showRules && <RulesModal ruleset={ruleset} onClose={() => setShowRules(false)} />}
         </div>
       )}
 

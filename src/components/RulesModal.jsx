@@ -1,10 +1,11 @@
 import React from 'react';
 
-export default function RulesModal({ onClose }) {
+export default function RulesModal({ ruleset, onClose }) {
+  const isRummy = ruleset === 'rummy_lite';
   return (
     <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div className="bg-slate-900 rounded-[2rem] border border-slate-800 max-w-lg w-full max-h-[85vh] overflow-y-auto p-6 md:p-8 space-y-6 shadow-2xl relative custom-scroll">
-        <button 
+        <button
           onClick={onClose}
           className="absolute top-5 right-5 p-1.5 bg-slate-800 hover:bg-slate-700 text-slate-400 rounded-lg transition cursor-pointer"
         >
@@ -14,37 +15,54 @@ export default function RulesModal({ onClose }) {
         </button>
 
         <div className="space-y-2">
-          <h3 className="text-2xl font-black text-amber-400 tracking-wide">Game Rules & Logic</h3>
+          <h3 className="text-2xl font-black text-amber-400 tracking-wide">
+            {isRummy ? 'Rummy Lite Fun Rules' : 'Game Rules & Logic'}
+          </h3>
           <p className="text-sm text-slate-400">
-            Learn the mechanics of Royal Sequence.
+            {isRummy ? 'Learn the mechanics of Rummy Lite.' : 'Learn the mechanics of Royal Sequence.'}
           </p>
         </div>
 
         <div className="space-y-4 text-xs md:text-sm text-slate-300">
           <section className="space-y-1">
             <h4 className="font-bold text-slate-100 uppercase tracking-wider text-xs">Deck Setup</h4>
-            <p>The game is played with two standard card decks plus four Jokers (total 108 cards). You and the computer opponent are dealt 13 cards each. The remaining cards form the Draw Deck.</p>
+            <p>
+              {isRummy
+                ? 'The game uses 54 cards for 2-3 players, or 108 cards for 4 players. You are dealt 10 cards to start.'
+                : 'The game is played with two standard card decks plus four Jokers (total 108 cards). You and the computer opponent are dealt 13 cards each. The remaining cards form the Draw Deck.'}
+            </p>
           </section>
 
           <section className="space-y-1">
             <h4 className="font-bold text-slate-100 uppercase tracking-wider text-xs">Turn Flow</h4>
             <ol className="list-decimal pl-5 space-y-1">
               <li>First, choose to draw a card from either the top of the <span className="font-semibold text-white">Draw Deck</span> (unseen) or the top of the <span className="font-semibold text-white">Discard Pile</span> (visible).</li>
-              <li>With 14 cards in your hand, you must select and discard 1 card to the discard pile, returning your hand size to 13.</li>
+              <li>With <span className="font-semibold text-amber-400">{isRummy ? '11' : '14'}</span> cards in your hand, you must select and discard 1 card to the discard pile, returning your hand size to {isRummy ? '10' : '13'}.</li>
             </ol>
           </section>
 
           <section className="space-y-1">
             <h4 className="font-bold text-slate-100 uppercase tracking-wider text-xs">The Winning Goal</h4>
-            <p>Your goal is to arrange your 13 cards so they cover all 13 distinct card ranks from Ace (A) to King (K) in any suit combinations:</p>
-            <div className="p-2.5 bg-slate-950/60 rounded-lg text-amber-400 font-mono text-center font-bold tracking-wider mt-1 text-xs">
-              A - 2 - 3 - 4 - 5 - 6 - 7 - 8 - 9 - 10 - J - Q - K
-            </div>
+            {isRummy ? (
+              <p>Your goal is to arrange your 10 cards into three valid melds: <strong>one 4-card meld</strong> and <strong>two 3-card melds</strong>. A meld can be a Sequence (Run) or a Set. <br /><br />
+                <strong>Crucial Rule:</strong> At least <strong>one sequence must be pure</strong> (contain NO jokers).</p>
+            ) : (
+              <>
+                <p>Your goal is to arrange your 13 cards so they cover all 13 distinct card ranks from Ace (A) to King (K) in any suit combinations:</p>
+                <div className="p-2.5 bg-slate-950/60 rounded-lg text-amber-400 font-mono text-center font-bold tracking-wider mt-1 text-xs">
+                  A - 2 - 3 - 4 - 5 - 6 - 7 - 8 - 9 - 10 - J - Q - K
+                </div>
+              </>
+            )}
           </section>
 
           <section className="space-y-1">
             <h4 className="font-bold text-slate-100 uppercase tracking-wider text-xs">Joker Wildcards</h4>
-            <p>The 4 Jokers act as wildcards. A Joker can represent *any* rank you are currently missing in your sequence. For instance, if you have A, 2, 3, 4, Joker, 6... the Joker acts as the 5 of any suit. You can use as many Jokers as you hold to fill the gaps!</p>
+            <p>
+              {isRummy
+                ? 'Jokers act as wildcards and can substitute for any rank in an impure sequence or set. Remember, you still need at least one pure sequence without any jokers to win!'
+                : 'The 4 Jokers act as wildcards. A Joker can represent *any* rank you are currently missing in your sequence. For instance, if you have A, 2, 3, 4, Joker, 6... the Joker acts as the 5 of any suit. You can use as many Jokers as you hold to fill the gaps!'}
+            </p>
           </section>
 
           <section className="space-y-1">

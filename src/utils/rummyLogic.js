@@ -62,7 +62,32 @@ export function isValidMeld(cards) {
 }
 
 /**
- * Validates if the 10-card hand satisfies the 4:3:3 win condition with at least one pure sequence.
+ * Validates if the EXACT physical arrangement of a 10-card hand satisfies the 4:3:3 win condition.
+ */
+export function validateArrangedRummyWin(hand) {
+  if (hand.length !== 10) return { isWin: false, error: 'Hand must have exactly 10 cards.' };
+
+  const group4 = hand.slice(0, 4);
+  const group3a = hand.slice(4, 7);
+  const group3b = hand.slice(7, 10);
+
+  if (!isValidMeld(group4)) return { isWin: false, error: 'First 4 cards do not form a valid run or set.' };
+  if (!isValidMeld(group3a)) return { isWin: false, error: 'Middle 3 cards do not form a valid run or set.' };
+  if (!isValidMeld(group3b)) return { isWin: false, error: 'Last 3 cards do not form a valid run or set.' };
+
+  const isGroup4Pure = isValidRun(group4, true);
+  const isGroup3aPure = isValidRun(group3a, true);
+  const isGroup3bPure = isValidRun(group3b, true);
+
+  if (isGroup4Pure || isGroup3aPure || isGroup3bPure) {
+    return { isWin: true, melds: [group4, group3a, group3b] };
+  }
+
+  return { isWin: false, error: 'At least one pure sequence (no jokers) is required.' };
+}
+
+/**
+ * Validates if the 10-card hand satisfies the 4:3:3 win condition with at least one pure sequence, regardless of order.
  */
 export function validateRummyWin(hand) {
   if (hand.length !== 10) return { isWin: false, melds: null };
@@ -74,23 +99,24 @@ export function validateRummyWin(hand) {
   // Helper to get combinations of size k from an array
   function getCombinations(array, k) {
     const results = [];
-    function backtrack(start, currentCombo, remaining) {
+    function backtrack(start, currentCombo, usedIndices) {
       if (currentCombo.length === k) {
+        const remaining = array.filter((_, idx) => !usedIndices.has(idx));
         results.push({
           combo: [...currentCombo],
-          remaining: [...remaining]
+          remaining
         });
         return;
       }
       for (let i = start; i < array.length; i++) {
         currentCombo.push(array[i]);
-        // remaining will not include array[i]
-        const newRemaining = remaining.filter((_, idx) => idx !== i);
-        backtrack(i + 1, currentCombo, newRemaining);
+        usedIndices.add(i);
+        backtrack(i + 1, currentCombo, usedIndices);
+        usedIndices.delete(i);
         currentCombo.pop();
       }
     }
-    backtrack(0, [], [...array]);
+    backtrack(0, [], new Set());
     return results;
   }
 

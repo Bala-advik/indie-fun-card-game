@@ -42,15 +42,15 @@ body,
   user-select: none;
   transform-origin: bottom center;
   /* Fluid adaptive sizing for any mobile screen */
-  width: 16vw;
-  height: 22.4vw;
+  width: 15.5vw;
+  height: 21.7vw;
   /* 1 : 1.4 ratio */
 }
 
 @media (min-width: 375px) {
   .playing-card-wrapper {
-    width: 18vw;
-    height: 25.2vw;
+    width: 17.5vw;
+    height: 24.5vw;
   }
 }
 
