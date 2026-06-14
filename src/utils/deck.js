@@ -28,13 +28,15 @@ export function getRankValue(rank) {
   }
 }
 
-// Generate a fresh 108-card deck (2 standard decks + 4 jokers)
-export function create108Deck() {
+// Generate a fresh deck (54 cards for 2-3 players, 108 for 4 players)
+export function createDeck(numPlayers = 2) {
   const deck = [];
   let idCounter = 0;
 
-  // Add 2 decks of 52 cards
-  for (let deckNum = 0; deckNum < 2; deckNum++) {
+  const numDecks = numPlayers >= 4 ? 2 : 1;
+
+  // Add decks of 52 cards
+  for (let deckNum = 0; deckNum < numDecks; deckNum++) {
     for (const suit of SUITS) {
       for (const rank of RANKS) {
         let fileNameRank = rank;
@@ -59,8 +61,8 @@ export function create108Deck() {
     }
   }
 
-  // Add 4 Jokers (2 red, 2 black)
-  for (let i = 0; i < 2; i++) {
+  // Add Jokers (2 per deck)
+  for (let i = 0; i < numDecks; i++) {
     deck.push({
       id: `joker_red_${i}`,
       suit: 'none',
@@ -174,7 +176,34 @@ export function sortHandBySuit(hand) {
 }
 
 // PC AI discard assistant
-export function evaluatePcDiscard(hand) {
+export function evaluatePcDiscard(hand, ruleset = 'royal_sequence') {
+  if (ruleset === 'rummy_lite') {
+    // Basic AI for Rummy: Discard a high value non-joker card that doesn't share suit or rank with many cards
+    const nonJokers = hand.filter(c => !c.isJoker);
+    if (nonJokers.length === 0) return hand[0];
+    
+    // Score each card based on how "isolated" it is (fewer cards of same suit/rank = higher discard priority)
+    let bestDiscard = nonJokers[0];
+    let minNeighbors = 999;
+    
+    for (const card of nonJokers) {
+      let neighbors = 0;
+      for (const other of nonJokers) {
+        if (card.id !== other.id) {
+          if (card.suit === other.suit && Math.abs(card.value - other.value) <= 2) neighbors++;
+          if (card.rank === other.rank) neighbors++;
+        }
+      }
+      
+      // If it's isolated, prefer discarding high value cards
+      if (neighbors < minNeighbors || (neighbors === minNeighbors && card.value > bestDiscard.value)) {
+        minNeighbors = neighbors;
+        bestDiscard = card;
+      }
+    }
+    return bestDiscard;
+  }
+
   const nonJokers = hand.filter(c => !c.isJoker);
   
   // Count rank frequencies

@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function GameOverScreen({ winner, myPlayerId, playerHands, isPvp, isHost, onRestart, onMainMenu }) {
+export default function GameOverScreen({ winner, myPlayerId, playerHands, isPvp, isHost, ruleset, onRestart, onMainMenu }) {
   const isWinner = winner === myPlayerId;
   const winnerName = isWinner ? 'You' : (isPvp ? `Player ${winner.replace('p', '')}` : 'PC');
   const myHand = playerHands[myPlayerId] || [];
@@ -23,7 +23,11 @@ export default function GameOverScreen({ winner, myPlayerId, playerHands, isPvp,
               <h1 className="text-4xl md:text-5xl font-black bg-gradient-to-r from-amber-400 to-yellow-300 bg-clip-text text-transparent">
                 VICTORY IS YOURS!
               </h1>
-              <p className="text-emerald-400 font-medium">You completed the Ace-to-King sequence first!</p>
+              <p className="text-emerald-400 font-medium">
+                {ruleset === 'rummy_lite' 
+                  ? 'You successfully formed the 4:3:3 melds!' 
+                  : 'You completed the Ace-to-King sequence first!'}
+              </p>
             </>
           ) : (
             <>
@@ -31,7 +35,11 @@ export default function GameOverScreen({ winner, myPlayerId, playerHands, isPvp,
               <h1 className="text-4xl md:text-5xl font-black bg-gradient-to-r from-rose-500 to-red-400 bg-clip-text text-transparent">
                 {winnerName.toUpperCase()} WINS!
               </h1>
-              <p className="text-slate-400 font-medium">The opponent assembled the sequence first.</p>
+              <p className="text-rose-400 font-medium">
+                {ruleset === 'rummy_lite' 
+                  ? `${winnerName} formed the 4:3:3 melds before you!` 
+                  : `${winnerName} completed the Ace-to-King sequence before you!`}
+              </p>
             </>
           )}
         </div>

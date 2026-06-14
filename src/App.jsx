@@ -3,7 +3,7 @@ import './App.css';
 
 // Import game utilities
 import {
-  create108Deck,
+  createDeck,
   shuffle,
   checkWinCondition,
   getHandSequenceMapping,
@@ -11,6 +11,7 @@ import {
   sortHandBySuit,
   evaluatePcDiscard
 } from './utils/deck';
+import { validateRummyWin, sortHandByMelds } from './utils/rummyLogic';
 
 // Import multiplayer helper
 import {
@@ -21,11 +22,13 @@ import {
 // Import modular components
 import Card from './components/Card';
 import SequenceTracker from './components/SequenceTracker';
+import RummyTracker from './components/RummyTracker';
 import WelcomeScreen from './components/WelcomeScreen';
 import GameOverScreen from './components/GameOverScreen';
 import RulesModal from './components/RulesModal';
 import GameLogs from './components/GameLogs';
 import ChatBubble from './components/ChatBubble';
+import ConfirmModal from './components/ConfirmModal';
 
 const QUICK_CHAT_OPTIONS = [
   "Hello! 👋",
@@ -41,6 +44,7 @@ const QUICK_CHAT_OPTIONS = [
 export default function App() {
   // Game Modes & Networking state
   const [gameMode, setGameMode] = useState('pc');
+  const [ruleset, setRuleset] = useState('royal_sequence');
   const [myRole, setMyRole] = useState('none');
   const [myPlayerId, setMyPlayerId] = useState('p1');
   const [roomCode, setRoomCode] = useState('');
@@ -64,6 +68,7 @@ export default function App() {
   const [showRules, setShowRules] = useState(false);
   const [showLogs, setShowLogs] = useState(false);
   const [showQuickChat, setShowQuickChat] = useState(false);
+  const [showQuitConfirm, setShowQuitConfirm] = useState(false);
   const [gameLogs, setGameLogs] = useState([]);
   const [pcStatus, setPcStatus] = useState('Waiting for your turn...');
   const [isPcThinking, setIsPcThinking] = useState(false);
@@ -115,18 +120,21 @@ export default function App() {
     return `p${nextNum}`;
   };
 
-  const startPcGame = (selectedNumPlayers = 2) => {
+  const startPcGame = (selectedNumPlayers = 2, selectedRuleset = 'royal_sequence') => {
     setNumPlayers(selectedNumPlayers);
+    setRuleset(selectedRuleset);
     setGameMode('pc');
     setMyRole('none');
     setMyPlayerId('p1');
 
-    const freshDeck = shuffle(create108Deck());
+    const freshDeck = shuffle(createDeck(selectedNumPlayers));
     const newHands = { p1: [], p2: [], p3: [], p4: [] };
+
+    const handSize = selectedRuleset === 'rummy_lite' ? 10 : 13;
 
     for (let i = 1; i <= selectedNumPlayers; i++) {
       const pId = `p${i}`;
-      const hand = freshDeck.splice(0, 13);
+      const hand = freshDeck.splice(0, handSize);
       newHands[pId] = i === 1 ? sortHandByRank(hand) : hand;
     }
     const firstDiscard = freshDeck.pop();
@@ -149,9 +157,10 @@ export default function App() {
     logAction(`Discard pile starts with ${firstDiscard.name}.`);
   };
 
-  const createPvpLobby = (selectedNumPlayers = 2) => {
+  const createPvpLobby = (selectedNumPlayers = 2, selectedRuleset = 'royal_sequence') => {
     cleanupPeer();
     setNumPlayers(selectedNumPlayers);
+    setRuleset(selectedRuleset);
     setGameMode('pvp');
     setMyRole('host');
     setMyPlayerId('p1');
@@ -207,16 +216,19 @@ export default function App() {
   const startPvpGame = () => {
     if (Object.keys(guestConnsRef.current).length < numPlayers - 1) return;
 
-    const freshDeck = shuffle(create108Deck());
+    const freshDeck = shuffle(createDeck(numPlayers));
     const newHands = { p1: [], p2: [], p3: [], p4: [] };
+
+    const handSize = ruleset === 'rummy_lite' ? 10 : 13;
 
     for (let i = 1; i <= numPlayers; i++) {
       const pId = `p${i}`;
-      newHands[pId] = sortHandByRank(freshDeck.splice(0, 13));
+      newHands[pId] = sortHandByRank(freshDeck.splice(0, handSize));
     }
     const firstDiscard = freshDeck.pop();
 
     const initialState = {
+      ruleset,
       deck: freshDeck,
       discardPile: [firstDiscard],
       playerHands: newHands,
@@ -300,6 +312,7 @@ export default function App() {
   };
 
   const handleSyncState = (s) => {
+    if (s.ruleset) setRuleset(s.ruleset);
     setDeck(s.deck);
     setDiscardPile(s.discardPile);
     setPlayerHands(s.playerHands);
@@ -370,10 +383,13 @@ export default function App() {
 
   const handlePlayerSort = (type) => {
     const hand = [...playerHands[myPlayerId]];
-    const newHand = type === 'rank' ? sortHandByRank(hand) : sortHandBySuit(hand);
+    let newHand;
+    if (type === 'rank') newHand = sortHandByRank(hand);
+    else if (type === 'suit') newHand = sortHandBySuit(hand);
+    else if (type === 'melds') newHand = sortHandByMelds(hand);
 
     setPlayerHands(prev => ({ ...prev, [myPlayerId]: newHand }));
-    logAction(`Player sorted hand by ${type === 'rank' ? 'Rank' : 'Suit'}.`);
+    logAction(`Player sorted hand by ${type === 'rank' ? 'Rank' : type === 'suit' ? 'Suit' : 'Melds'}.`);
 
     if (myRole === 'guest' && hostConnRef.current) {
       hostConnRef.current.send({ type: 'action', actionData: { action: 'reorder', newHand } });
@@ -466,7 +482,14 @@ export default function App() {
     }
     setNewlyDrawnCardId(null);
 
-    if (checkWinCondition(nextHand)) {
+    let isWin = false;
+    if (ruleset === 'rummy_lite') {
+      isWin = validateRummyWin(nextHand).isWin;
+    } else {
+      isWin = checkWinCondition(nextHand);
+    }
+
+    if (isWin) {
       setWinner(playerId);
       setGameState('game_over');
       logAction(`🏆 Player ${playerId.replace('p', '')} declared win!`);
@@ -546,7 +569,7 @@ export default function App() {
         setPlayerHands(prev => ({ ...prev, [activePlayer]: nextPcHand }));
 
         const timerDiscard = setTimeout(() => {
-          const cardToDiscard = evaluatePcDiscard(nextPcHand);
+          const cardToDiscard = evaluatePcDiscard(nextPcHand, ruleset);
           const finalPcHand = nextPcHand.filter(c => c.id !== cardToDiscard.id);
 
           setPlayerHands(prev => ({ ...prev, [activePlayer]: finalPcHand }));
@@ -557,7 +580,14 @@ export default function App() {
           setPcStatus(`Waiting for your turn...`);
           setIsPcThinking(false);
 
-          if (checkWinCondition(finalPcHand)) {
+          let isPcWin = false;
+          if (ruleset === 'rummy_lite') {
+            isPcWin = validateRummyWin(finalPcHand).isWin;
+          } else {
+            isPcWin = checkWinCondition(finalPcHand);
+          }
+
+          if (isPcWin) {
             setTimeout(() => {
               setWinner(activePlayer);
               setGameState('game_over');
@@ -611,11 +641,14 @@ export default function App() {
   const selectedDiscardCard = myHand.find(c => c.id === selectedCardId);
 
   const quitToMainMenu = () => {
-    if (window.confirm('Are you sure you want to quit the current game?')) {
-      cleanupPeer();
-      setGameState('welcome');
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
+    setShowQuitConfirm(true);
+  };
+
+  const executeQuit = () => {
+    cleanupPeer();
+    setGameState('welcome');
+    setShowQuitConfirm(false);
+    window.history.replaceState({}, document.title, window.location.pathname);
   };
 
   return (
@@ -731,11 +764,15 @@ export default function App() {
               })}
             </div>
 
-            <SequenceTracker
-              mapping={seqStats.mapping}
-              redundantCards={seqStats.redundantCards}
-              unusedJokers={seqStats.unusedJokers}
-            />
+            {ruleset === 'rummy_lite' ? (
+              <RummyTracker hand={myHand} />
+            ) : (
+              <SequenceTracker
+                mapping={seqStats.mapping}
+                redundantCards={seqStats.redundantCards}
+                unusedJokers={seqStats.unusedJokers}
+              />
+            )}
 
             <div className="my-2 flex justify-center items-center gap-6 md:gap-14 z-10 relative flex-1 min-h-0">
               <div className="flex flex-col items-center gap-1.5 scale-90 sm:scale-100">
@@ -835,6 +872,14 @@ export default function App() {
                 >
                   Sort Suit
                 </button>
+                {ruleset === 'rummy_lite' && (
+                  <button
+                    onClick={() => handlePlayerSort('melds')}
+                    className="px-2.5 py-1 bg-slate-900/80 hover:bg-slate-800 text-[9px] md:text-xs font-bold rounded-lg border border-slate-800 text-amber-400 transition cursor-pointer shadow-[0_0_8px_rgba(245,158,11,0.2)]"
+                  >
+                    Sort Melds
+                  </button>
+                )}
               </div>
 
               <div className="text-[9px] md:text-xs text-slate-400 font-medium bg-slate-900/60 px-2.5 py-1 rounded-lg border border-slate-800">
@@ -858,6 +903,7 @@ export default function App() {
                   isSelected={selectedCardId === card.id}
                   isNewlyDrawn={card.id === newlyDrawnCardId}
                   turnState={isMyTurn ? (turnPhase === 'discard' ? 'player_discard' : 'player_draw') : 'opponent_turn'}
+                  isSpacer={ruleset === 'rummy_lite' && (index === 4 || index === 7)}
                   onSelect={setSelectedCardId}
                   onDiscard={discardCard}
                   onDragStart={handleDragStart}
@@ -880,10 +926,22 @@ export default function App() {
           playerHands={playerHands}
           isPvp={gameMode === 'pvp'}
           isHost={myRole === 'host'}
+          ruleset={ruleset}
           onRestart={gameMode === 'pvp' ? () => {
             if (myRole === 'host') startPvpGame();
-          } : () => startPcGame(numPlayers)}
+          } : () => startPcGame(numPlayers, ruleset)}
           onMainMenu={quitToMainMenu}
+        />
+      )}
+
+      {showQuitConfirm && (
+        <ConfirmModal
+          title={gameState === 'game_over' ? "Return to Menu?" : "Quit Game?"}
+          message={gameState === 'game_over' ? "Return to the main menu?" : "Are you sure you want to abandon the current match? Your progress will be lost."}
+          confirmText="Yes, Quit"
+          cancelText="Cancel"
+          onConfirm={executeQuit}
+          onCancel={() => setShowQuitConfirm(false)}
         />
       )}
     </div>

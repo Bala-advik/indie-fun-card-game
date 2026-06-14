@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 export default function WelcomeScreen({ onStartPc, onCreatePvp, onJoinPvp, onStartPvpGame, connectionState, roomCode, connectedGuests, expectedGuests }) {
   const [joinCode, setJoinCode] = useState('');
   const [numPlayers, setNumPlayers] = useState(2);
+  const [selectedRuleset, setSelectedRuleset] = useState('royal_sequence');
 
   const handleJoinSubmit = (e) => {
     e.preventDefault();
@@ -100,6 +101,25 @@ export default function WelcomeScreen({ onStartPc, onCreatePvp, onJoinPvp, onSta
         {connectionState === 'disconnected' && (
           <div className="space-y-4">
             
+            {/* Game Mode Selection */}
+            <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800/80 flex flex-col gap-2">
+              <label className="text-xs text-slate-400 font-bold uppercase tracking-wider">Game Mode</label>
+              <div className="flex gap-2 justify-center">
+                <button
+                  onClick={() => setSelectedRuleset('royal_sequence')}
+                  className={`flex-1 py-2 rounded-lg font-black text-sm transition-all border ${selectedRuleset === 'royal_sequence' ? 'bg-amber-500 text-slate-950 border-amber-400 shadow-[0_0_15px_rgba(245,158,11,0.3)]' : 'bg-slate-900 text-slate-400 border-slate-700 hover:bg-slate-800'}`}
+                >
+                  A23 Mode
+                </button>
+                <button
+                  onClick={() => setSelectedRuleset('rummy_lite')}
+                  className={`flex-1 py-2 rounded-lg font-black text-sm transition-all border ${selectedRuleset === 'rummy_lite' ? 'bg-indigo-500 text-slate-100 border-indigo-400 shadow-[0_0_15px_rgba(99,102,241,0.3)]' : 'bg-slate-900 text-slate-400 border-slate-700 hover:bg-slate-800'}`}
+                >
+                  Rummy Lite Fun
+                </button>
+              </div>
+            </div>
+
             {/* Player Selection */}
             <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800/80 flex flex-col gap-2">
               <label className="text-xs text-slate-400 font-bold uppercase tracking-wider">Number of Players</label>
@@ -118,7 +138,7 @@ export default function WelcomeScreen({ onStartPc, onCreatePvp, onJoinPvp, onSta
 
             {/* Play Offline Option */}
             <button
-              onClick={() => onStartPc(numPlayers)}
+              onClick={() => onStartPc(numPlayers, selectedRuleset)}
               className="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black rounded-xl shadow-lg transition duration-200 cursor-pointer"
             >
               Play vs Computer (Offline)
@@ -133,7 +153,7 @@ export default function WelcomeScreen({ onStartPc, onCreatePvp, onJoinPvp, onSta
 
             {/* Create Lobby */}
             <button
-              onClick={() => onCreatePvp(numPlayers)}
+              onClick={() => onCreatePvp(numPlayers, selectedRuleset)}
               className="w-full py-3 bg-slate-800 hover:bg-slate-755 border border-slate-700 text-slate-200 font-bold rounded-xl transition cursor-pointer"
             >
               Create Online PvP Lobby

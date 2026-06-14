@@ -42,15 +42,15 @@ body,
   user-select: none;
   transform-origin: bottom center;
   /* Fluid adaptive sizing for any mobile screen */
-  width: 18vw;
-  height: 25.2vw;
+  width: 16vw;
+  height: 22.4vw;
   /* 1 : 1.4 ratio */
 }
 
 @media (min-width: 375px) {
   .playing-card-wrapper {
-    width: 20vw;
-    height: 28vw;
+    width: 18vw;
+    height: 25.2vw;
   }
 }
 
@@ -77,14 +77,12 @@ body,
 
 /* Overlapping effect (negative margins) */
 .playing-card-wrapper:not(:first-child) {
-  /* 95vw total width math: gap = 6.4vw, margin = 6.4vw - 18vw */
-  margin-left: -11.6vw;
+  margin-left: -11vw;
 }
 
 @media (min-width: 375px) {
   .playing-card-wrapper:not(:first-child) {
-    /* 95vw total width math: gap = 6.25vw, margin = 6.25vw - 20vw */
-    margin-left: -13.75vw;
+    margin-left: -12.5vw;
   }
 }
 
@@ -103,6 +101,35 @@ body,
 @media (min-width: 1024px) {
   .playing-card-wrapper:not(:first-child) {
     margin-left: -64px;
+  }
+}
+
+/* Rummy Mode Spacers */
+.playing-card-wrapper.rummy-spacer {
+  margin-left: 1vw !important;
+}
+
+@media (min-width: 375px) {
+  .playing-card-wrapper.rummy-spacer {
+    margin-left: 1vw !important;
+  }
+}
+
+@media (min-width: 640px) {
+  .playing-card-wrapper.rummy-spacer {
+    margin-left: 8px !important;
+  }
+}
+
+@media (min-width: 768px) {
+  .playing-card-wrapper.rummy-spacer {
+    margin-left: 12px !important;
+  }
+}
+
+@media (min-width: 1024px) {
+  .playing-card-wrapper.rummy-spacer {
+    margin-left: 16px !important;
   }
 }
 
