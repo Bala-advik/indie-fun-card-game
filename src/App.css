@@ -1,0 +1,290 @@
+/* Royal Sequence Card Game Custom CSS */
+
+/* Viewport Locking to prevent screen scrolling */
+html, body, #root {
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  background-color: #020617; /* Slate 950 */
+}
+
+/* Card Hand Styling & Fanning */
+.card-hand-container {
+  display: flex;
+  justify-content: center;
+  align-items: flex-end;
+  position: relative;
+  min-height: 130px;
+  width: 100%;
+  padding-bottom: 15px;
+  overflow-x: clip; /* Clip fanned card overflows */
+  overflow-y: visible;
+}
+
+@media (min-width: 768px) {
+  .card-hand-container {
+    min-height: 180px;
+    padding-bottom: 25px;
+  }
+}
+
+/* Base Card Style */
+.playing-card-wrapper {
+  position: relative;
+  transition: all 0.35s cubic-bezier(0.25, 0.8, 0.25, 1);
+  cursor: pointer;
+  user-select: none;
+  transform-origin: bottom center;
+  /* Responsive sizing */
+  width: 55px;
+  height: 77px; /* 1 : 1.4 */
+}
+
+@media (min-width: 375px) {
+  .playing-card-wrapper {
+    width: 65px;
+    height: 91px;
+  }
+}
+
+@media (min-width: 640px) {
+  .playing-card-wrapper {
+    width: 80px;
+    height: 112px;
+  }
+}
+
+@media (min-width: 768px) {
+  .playing-card-wrapper {
+    width: 95px;
+    height: 133px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .playing-card-wrapper {
+    width: 105px;
+    height: 147px;
+  }
+}
+
+/* Overlapping effect (negative margins) */
+.playing-card-wrapper:not(:first-child) {
+  margin-left: -32px;
+}
+
+@media (min-width: 375px) {
+  .playing-card-wrapper:not(:first-child) {
+    margin-left: -38px;
+  }
+}
+
+@media (min-width: 640px) {
+  .playing-card-wrapper:not(:first-child) {
+    margin-left: -48px;
+  }
+}
+
+@media (min-width: 768px) {
+  .playing-card-wrapper:not(:first-child) {
+    margin-left: -58px;
+  }
+}
+
+@media (min-width: 1024px) {
+  .playing-card-wrapper:not(:first-child) {
+    margin-left: -64px;
+  }
+}
+
+/* Card hover animation */
+.playing-card-wrapper:hover {
+  transform: translateY(-30px) scale(1.1) !important;
+  z-index: 100 !important;
+}
+
+/* Selected Card status */
+.playing-card-wrapper.selected {
+  transform: translateY(-40px) scale(1.12) !important;
+  z-index: 90 !important;
+}
+
+.playing-card-wrapper.selected::after {
+  content: '';
+  position: absolute;
+  inset: -3px;
+  border: 3px solid #f59e0b; /* Amber 500 */
+  border-radius: 10px;
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.7);
+  pointer-events: none;
+}
+
+/* Card back patterns */
+.card-back-pattern {
+  background-color: #1e3a8a;
+  background-image: radial-gradient(circle, transparent 20%, #1e3a8a 20%, #1e3a8a 80%, transparent 80%, transparent),
+                    radial-gradient(circle, transparent 20%, #1e3a8a 20%, #1e3a8a 80%, transparent 80%, transparent),
+                    radial-gradient(circle, transparent 20%, #1e3a8a 20%, #1e3a8a 80%, transparent 80%, transparent),
+                    radial-gradient(circle, transparent 20%, #1e3a8a 20%, #1e3a8a 80%, transparent 80%, transparent),
+                    radial-gradient(circle, transparent 20%, #1e3a8a 20%, #1e3a8a 80%, transparent 80%, transparent),
+                    linear-gradient(45deg, #1d4ed8 25%, #1e40af 25%, #1e40af 50%, #1d4ed8 50%, #1d4ed8 75%, #1e40af 75%, #1e40af 100%),
+                    linear-gradient(-45deg, #1d4ed8 25%, #1e40af 25%, #1e40af 50%, #1d4ed8 50%, #1d4ed8 75%, #1e40af 75%, #1e40af 100%);
+  background-size: 16px 16px;
+  background-position: 0 0, 8px 8px, 0 8px, 8px 0, 4px 4px, 0 0, 0 0;
+  border: 4px solid white;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.card-back-pattern::before {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  border: 1.5px dashed rgba(255, 255, 255, 0.35);
+  border-radius: 5px;
+}
+
+.card-back-pattern::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 25px;
+  height: 25px;
+  background: radial-gradient(circle, #f59e0b 0%, transparent 70%);
+  border: 1.5px solid rgba(255, 255, 255, 0.5);
+  border-radius: 50%;
+}
+
+.card-back-pattern-red {
+  background-color: #7f1d1d;
+  background-image: radial-gradient(circle, transparent 20%, #7f1d1d 20%, #7f1d1d 80%, transparent 80%, transparent),
+                    radial-gradient(circle, transparent 20%, #7f1d1d 20%, #7f1d1d 80%, transparent 80%, transparent),
+                    radial-gradient(circle, transparent 20%, #7f1d1d 20%, #7f1d1d 80%, transparent 80%, transparent),
+                    radial-gradient(circle, transparent 20%, #7f1d1d 20%, #7f1d1d 80%, transparent 80%, transparent),
+                    radial-gradient(circle, transparent 20%, #7f1d1d 20%, #7f1d1d 80%, transparent 80%, transparent),
+                    linear-gradient(45deg, #b91c1c 25%, #991b1b 25%, #991b1b 50%, #b91c1c 50%, #b91c1c 75%, #991b1b 75%, #991b1b 100%),
+                    linear-gradient(-45deg, #b91c1c 25%, #991b1b 25%, #991b1b 50%, #b91c1c 50%, #b91c1c 75%, #991b1b 75%, #991b1b 100%);
+  background-size: 16px 16px;
+  background-position: 0 0, 8px 8px, 0 8px, 8px 0, 4px 4px, 0 0, 0 0;
+  border: 4px solid white;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+  position: relative;
+  overflow: hidden;
+}
+
+.card-back-pattern-red::before {
+  content: '';
+  position: absolute;
+  inset: 4px;
+  border: 1.5px dashed rgba(255, 255, 255, 0.35);
+  border-radius: 5px;
+}
+
+.card-back-pattern-red::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 25px;
+  height: 25px;
+  background: radial-gradient(circle, #f59e0b 0%, transparent 70%);
+  border: 1.5px solid rgba(255, 255, 255, 0.5);
+  border-radius: 50%;
+}
+
+/* Deck stack depth shadows */
+.deck-stack-depth {
+  box-shadow: 
+    0 1px 0 #ccc,
+    0 2px 0 #bbb,
+    0 3px 0 #aaa,
+    0 4px 0 #999,
+    0 5px 5px rgba(0,0,0,0.5);
+  transition: all 0.2s ease;
+}
+
+.deck-stack-depth:hover {
+  transform: translate(-1px, -2px);
+  box-shadow: 
+    1px 2px 0 #ccc,
+    2px 4px 0 #bbb,
+    3px 6px 0 #aaa,
+    4px 8px 0 #999,
+    5px 10px 15px rgba(0,0,0,0.6);
+}
+
+/* Pulse Glows */
+@keyframes glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 12px rgba(59, 130, 246, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.9);
+  }
+}
+
+.glow-active-zone {
+  animation: glow-pulse 2s infinite ease-in-out;
+  border-color: #3b82f6 !important;
+}
+
+@keyframes green-glow-pulse {
+  0%, 100% {
+    box-shadow: 0 0 12px rgba(16, 185, 129, 0.5);
+  }
+  50% {
+    box-shadow: 0 0 20px rgba(16, 185, 129, 0.9);
+  }
+}
+
+.glow-win-zone {
+  animation: green-glow-pulse 1.5s infinite ease-in-out;
+  border-color: #10b981 !important;
+}
+
+/* Chat bubble pop-and-fade animation */
+.chat-bubble-popup {
+  animation: pop-and-fade 4s forwards cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes pop-and-fade {
+  0% {
+    transform: scale(0) translateY(10px);
+    opacity: 0;
+  }
+  6% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+  85% {
+    transform: scale(1) translateY(0);
+    opacity: 1;
+  }
+  100% {
+    transform: scale(0.85) translateY(-12px);
+    opacity: 0;
+  }
+}
+
+/* Custom scrollbar */
+.custom-scroll::-webkit-scrollbar {
+  height: 5px;
+  width: 5px;
+}
+.custom-scroll::-webkit-scrollbar-track {
+  background: rgba(0, 0, 0, 0.15);
+  border-radius: 10px;
+}
+.custom-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: 10px;
+}
+.custom-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.3);
+}
