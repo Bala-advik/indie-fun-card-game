@@ -35,7 +35,7 @@ export default function RummyTracker({ hand, melds, onDropToMeld, onRestoreFromM
         </span>
       </div>
 
-      <div className="flex flex-col sm:flex-row gap-2">
+      <div className="flex flex-row gap-1 sm:gap-2">
         {capacities.map((capacity, i) => {
           const slotFull = melds[i].length === capacity;
           const slotValid = slotFull && isValidMeld(melds[i]);
@@ -57,10 +57,10 @@ export default function RummyTracker({ hand, melds, onDropToMeld, onRestoreFromM
             data-meld-index={i}
             onDragOver={handleDragOver}
             onDrop={(e) => handleDrop(e, i)}
-            className={`flex-1 rounded-lg p-1.5 sm:p-2 text-center transition ${slotClass}`}
+            className={`flex-1 rounded-lg p-1 sm:p-2 text-center transition ${slotClass}`}
           >
-            <div className={`text-[8px] sm:text-[10px] font-bold mb-1 uppercase tracking-wider ${textClass}`}>
-              {capacity}-Card Meld {slotValid ? '✅' : slotError ? '❌' : `(${melds[i].length}/${capacity})`}
+            <div className={`text-[7px] sm:text-[10px] font-bold mb-1 uppercase tracking-wider ${textClass}`}>
+              {capacity} {slotValid ? '✅' : slotError ? '❌' : `(${melds[i].length}/${capacity})`}
             </div>
             
             <div className="flex justify-center gap-1 min-h-[20px] sm:min-h-[28px]">

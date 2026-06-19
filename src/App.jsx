@@ -982,7 +982,7 @@ export default function App() {
               />
             )}
 
-            <div className="my-2 flex justify-center items-center gap-6 md:gap-14 z-10 relative flex-1 min-h-0">
+            <div className="my-2 flex justify-center items-center gap-2 sm:gap-6 md:gap-14 z-10 relative flex-1 min-h-0">
               <div className="flex flex-col items-center gap-1.5 scale-90 sm:scale-100">
                 <button
                   onClick={() => drawCard('deck')}
@@ -997,7 +997,7 @@ export default function App() {
                 <span className="text-[9px] sm:text-[10px] font-bold text-emerald-300 tracking-wider">DRAW DECK</span>
               </div>
 
-              <div className="flex flex-col items-center justify-center max-w-sm text-center bg-slate-950/80 p-3 rounded-xl border border-slate-800/85 backdrop-blur-md shadow-xl min-w-[170px] sm:min-w-[250px] scale-90 sm:scale-100">
+              <div className="flex flex-col items-center justify-center max-w-[140px] sm:max-w-sm text-center bg-slate-950/80 p-2 sm:p-3 rounded-xl border border-slate-800/85 backdrop-blur-md shadow-xl min-w-[120px] sm:min-w-[250px] scale-90 sm:scale-100">
                 <span className="text-[9px] font-bold text-slate-400 tracking-wide uppercase mb-1">Table Actions</span>
 
                 {isMyTurn && turnPhase === 'draw' && (
