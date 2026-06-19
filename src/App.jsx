@@ -11,7 +11,7 @@ import {
   sortHandBySuit,
   evaluatePcDiscard
 } from './utils/deck';
-import { validateRummyWin, sortHandByMelds } from './utils/rummyLogic';
+import { validateRummyWin, sortHandByMelds, isValidMeld, validateArrangedRummyWin } from './utils/rummyLogic';
 
 // Import multiplayer helper
 import {
@@ -427,6 +427,7 @@ export default function App() {
 
     setPlayerHands(newHands);
     setPlayerMelds(newMelds);
+    setSelectedCardIds(prev => prev.filter(id => id !== cardId));
 
     if (playerId === myPlayerId && myRole !== 'host') {
       hostConnRef.current.send({ type: 'action', actionData: { action: 'drop_meld', cardId, meldIndex } });
@@ -815,6 +816,7 @@ export default function App() {
   const handleDragStart = (e, cardId) => {
     setDraggedCardId(cardId);
     e.dataTransfer.effectAllowed = 'move';
+    e.dataTransfer.setData('text/plain', cardId);
   };
   const handleDragOver = (e) => e.preventDefault();
   const handleDrop = (e, targetId) => {
@@ -874,8 +876,8 @@ export default function App() {
         <div className="flex-1 flex flex-col justify-between p-2 md:p-4 relative max-w-7xl mx-auto w-full z-10 overflow-hidden">
 
           <div className="flex justify-between items-center bg-slate-900/80 p-2 md:p-3 rounded-xl border border-slate-800 shadow-md">
-            <h2 className="font-black text-sm md:text-xl tracking-wider bg-gradient-to-r from-amber-400 to-emerald-400 bg-clip-text text-transparent">
-              ROYAL SEQUENCE {gameMode === 'pvp' && <span className="text-xs text-indigo-400 ml-1 font-bold">(MULTIPLAYER)</span>}
+            <h2 className="font-black text-sm md:text-xl tracking-wider text-slate-200">
+              CARD CLASH {gameMode === 'pvp' && <span className="text-xs text-indigo-400 ml-1 font-bold">(MULTIPLAYER)</span>}
             </h2>
 
             <div className="flex items-center gap-1.5 md:gap-3">
@@ -1155,6 +1157,7 @@ export default function App() {
           winner={winner}
           myPlayerId={myPlayerId}
           playerHands={playerHands}
+          playerMelds={playerMelds}
           isPvp={gameMode === 'pvp'}
           isHost={myRole === 'host'}
           ruleset={ruleset}

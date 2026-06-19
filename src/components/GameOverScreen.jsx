@@ -1,13 +1,24 @@
 import React from 'react';
 
-export default function GameOverScreen({ winner, myPlayerId, playerHands, isPvp, isHost, ruleset, onRestart, onMainMenu }) {
+export default function GameOverScreen({ winner, myPlayerId, playerHands, playerMelds, isPvp, isHost, ruleset, onRestart, onMainMenu }) {
   const isWinner = winner === myPlayerId;
   const winnerName = isWinner ? 'You' : (isPvp ? `Player ${winner.replace('p', '')}` : 'PC');
-  const myHand = playerHands[myPlayerId] || [];
+  
+  // Combine hands and melds for display
+  const getFullHand = (playerId) => {
+    let hand = playerHands[playerId] || [];
+    if (ruleset === 'rummy_lite' && playerMelds && playerMelds[playerId]) {
+      const melds = playerMelds[playerId].flat();
+      hand = [...hand, ...melds];
+    }
+    return hand;
+  };
+
+  const myHand = getFullHand(myPlayerId);
   
   // To avoid crowding, show winner's hand and my hand. If I am the winner, show one opponent.
   const opponentId = winner === myPlayerId ? Object.keys(playerHands).find(id => id !== myPlayerId && playerHands[id]?.length > 0) : winner;
-  const opponentHand = playerHands[opponentId] || [];
+  const opponentHand = opponentId ? getFullHand(opponentId) : [];
   const opponentName = opponentId === winner ? winnerName : (isPvp ? `Player ${opponentId?.replace('p', '')}` : 'PC');
   return (
     <div className="flex-1 flex flex-col items-center justify-center p-4 relative z-50">

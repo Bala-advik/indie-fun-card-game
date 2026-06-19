@@ -15,14 +15,11 @@ export default function WelcomeScreen({ onStartPc, onCreatePvp, onJoinPvp, onSta
   return (
     <div className="flex-1 flex flex-col items-center justify-center p-4 relative z-10 overflow-y-auto custom-scroll">
       <div className="absolute inset-0 bg-radial from-emerald-950/20 via-slate-950 to-slate-950 z-0"></div>
-      
+
       <div className="z-10 max-w-xl w-full text-center space-y-6 bg-slate-900/90 p-6 md:p-8 rounded-[2rem] border border-slate-800 shadow-2xl backdrop-blur-md">
         <div className="space-y-2">
-          <span className="px-3.5 py-1 bg-emerald-500/10 border border-emerald-500/30 rounded-full text-emerald-400 text-xs font-semibold tracking-wide uppercase">
-            Royal Sequence Card Game
-          </span>
-          <h1 className="text-4xl md:text-5xl font-black tracking-tight bg-gradient-to-r from-amber-400 via-emerald-400 to-indigo-500 bg-clip-text text-transparent drop-shadow-sm">
-            ROYAL SEQUENCE
+          <h1 className="text-4xl md:text-5xl font-black tracking-tight text-slate-200 drop-shadow-sm">
+            CARD CLASH
           </h1>
           <p className="text-slate-400 text-sm md:text-base">
             Arrange your hand into an Ace-to-King sequence. Use Jokers as wildcards to win!
@@ -49,7 +46,7 @@ export default function WelcomeScreen({ onStartPc, onCreatePvp, onJoinPvp, onSta
               </span>
               <p className="text-sm text-emerald-400 font-black tracking-wide">WAITING FOR PLAYERS...</p>
             </div>
-            
+
             <div className="text-sm font-bold text-slate-300">
               Players Joined: {connectedGuests + 1} / {expectedGuests + 1}
             </div>
@@ -57,9 +54,9 @@ export default function WelcomeScreen({ onStartPc, onCreatePvp, onJoinPvp, onSta
             <div className="space-y-2">
               <p className="text-xs text-slate-400">Share this connection link with your friends:</p>
               <div className="flex gap-2 items-center bg-slate-900 p-2 rounded-lg border border-slate-800 text-xs">
-                <input 
-                  type="text" 
-                  readOnly 
+                <input
+                  type="text"
+                  readOnly
                   value={`${window.location.origin}${window.location.pathname}?room=${roomCode}`}
                   className="bg-transparent flex-1 text-slate-300 outline-none select-all font-mono"
                 />
@@ -68,8 +65,8 @@ export default function WelcomeScreen({ onStartPc, onCreatePvp, onJoinPvp, onSta
                     const link = `${window.location.origin}${window.location.pathname}?room=${roomCode}`;
                     if (navigator.share) {
                       navigator.share({
-                        title: 'Royal Sequence',
-                        text: 'Join my Royal Sequence multiplayer game!',
+                        title: 'Card Clash',
+                        text: 'Join my Card Clash multiplayer game!',
                         url: link
                       }).catch(console.error);
                     } else {
@@ -100,7 +97,7 @@ export default function WelcomeScreen({ onStartPc, onCreatePvp, onJoinPvp, onSta
         {/* Standard Menu options */}
         {connectionState === 'disconnected' && (
           <div className="space-y-4">
-            
+
             {/* Game Mode Selection */}
             <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800/80 flex flex-col gap-2">
               <label className="text-xs text-slate-400 font-bold uppercase tracking-wider">Game Mode</label>

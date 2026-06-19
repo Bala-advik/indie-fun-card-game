@@ -38,7 +38,7 @@ export default function GameLogs({ logs, onClose }) {
       </div>
 
       <div className="text-[10px] text-slate-500 text-center border-t border-slate-850 pt-3">
-        Royal Sequence v1.0.0
+        Card Clash v1.0.0
       </div>
     </div>
   );

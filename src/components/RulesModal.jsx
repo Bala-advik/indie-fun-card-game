@@ -19,7 +19,7 @@ export default function RulesModal({ ruleset, onClose }) {
             {isRummy ? 'Rummy Lite Fun Rules' : 'Game Rules & Logic'}
           </h3>
           <p className="text-sm text-slate-400">
-            {isRummy ? 'Learn the mechanics of Rummy Lite.' : 'Learn the mechanics of Royal Sequence.'}
+            {isRummy ? 'Learn the mechanics of Rummy Lite.' : 'Learn the mechanics of Card Clash.'}
           </p>
         </div>
 
