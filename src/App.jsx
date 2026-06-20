@@ -145,6 +145,7 @@ export default function App() {
     setDeck(freshDeck);
     setDiscardPile([firstDiscard]);
     setPlayerHands(newHands);
+    setPlayerMelds({ p1: [[], [], []], p2: [[], [], []], p3: [[], [], []], p4: [[], [], []] });
 
     setActivePlayer('p1');
     setTurnPhase('draw');

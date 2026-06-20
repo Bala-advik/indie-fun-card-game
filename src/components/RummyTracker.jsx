@@ -26,12 +26,30 @@ export default function RummyTracker({ hand, melds, onDropToMeld, onRestoreFromM
 
   return (
     <div className="bg-slate-950/80 p-1.5 sm:p-3 rounded-xl sm:rounded-2xl border border-slate-800 shadow-lg z-10 relative">
+      <div className="flex justify-between items-center px-1 mb-1 sm:mb-2">
+        <h3 className="font-bold text-[10px] sm:text-xs text-indigo-400 uppercase tracking-widest">
+          Rummy Lite Objective
+        </h3>
+        {melds.some(m => m.length > 0) && (
+          <button 
+            onClick={onSortMelds}
+            className="text-[9px] sm:text-[10px] bg-slate-800 hover:bg-slate-700 text-slate-300 px-2 py-1 rounded shadow"
+          >
+            Sort by Melds
+          </button>
+        )}
+      </div>
+
+      <p className="text-[9px] sm:hidden text-slate-400 italic mb-2 text-center leading-tight">
+        (Select cards from your hand, then tap a slot below to move them)
+      </p>
+
       <div className="flex justify-between items-center mb-2 px-1">
         <span className="text-[9px] sm:text-[10px] md:text-xs font-black text-slate-400 tracking-wider uppercase">
-          Rummy Lite Objective
+          Status
         </span>
         <span className="text-[9px] sm:text-[10px] md:text-xs text-slate-300">
-          Status: <span className={`font-bold ${isComplete ? 'text-amber-400' : isFull ? 'text-red-400' : 'text-blue-400'}`}>{isComplete ? 'READY TO DECLARE' : isFull ? 'INVALID MELDS' : 'In Progress'}</span>
+          <span className={`font-bold ${isComplete ? 'text-amber-400' : isFull ? 'text-red-400' : 'text-blue-400'}`}>{isComplete ? 'READY TO DECLARE' : isFull ? 'INVALID MELDS' : 'In Progress'}</span>
         </span>
       </div>
 
