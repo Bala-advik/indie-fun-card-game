@@ -987,7 +987,7 @@ export default function App() {
                 <button
                   onClick={() => drawCard('deck')}
                   disabled={!isMyTurn || turnPhase !== 'draw'}
-                  className={`playing-card-wrapper card-back-pattern deck-stack-depth flex items-center justify-center border-4 border-white select-none transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none ${isMyTurn && turnPhase === 'draw' ? 'glow-active-zone border-blue-500 cursor-pointer' : ''}`}
+                  className={`playing-card-wrapper no-hover-lift card-back-pattern deck-stack-depth flex items-center justify-center border-4 border-white select-none transition-all disabled:opacity-40 disabled:cursor-not-allowed disabled:hover:translate-y-0 disabled:hover:shadow-none ${isMyTurn && turnPhase === 'draw' ? 'glow-active-zone border-blue-500 cursor-pointer' : ''}`}
                 >
                   <div className="bg-slate-950/60 backdrop-blur-sm rounded-lg px-1.5 py-0.5 text-center font-black text-[10px] md:text-xs text-slate-100 shadow border border-slate-800">
                     DECK
@@ -1046,7 +1046,7 @@ export default function App() {
                 <button
                   onClick={() => drawCard('discard')}
                   disabled={!isMyTurn || turnPhase !== 'draw' || discardPile.length === 0}
-                  className={`playing-card-wrapper bg-slate-900 border-2 border-slate-700/60 shadow-lg flex items-center justify-center relative select-none disabled:opacity-40 disabled:cursor-not-allowed ${isMyTurn && turnPhase === 'draw' && discardPile.length > 0 ? 'glow-active-zone cursor-pointer border-blue-500' : ''}`}
+                  className={`playing-card-wrapper no-hover-lift bg-slate-900 border-2 border-slate-700/60 shadow-lg flex items-center justify-center relative select-none disabled:opacity-40 disabled:cursor-not-allowed ${isMyTurn && turnPhase === 'draw' && discardPile.length > 0 ? 'glow-active-zone cursor-pointer border-blue-500' : ''}`}
                 >
                   {discardPile.length > 0 ? (
                     <img

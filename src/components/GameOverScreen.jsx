@@ -4,21 +4,51 @@ export default function GameOverScreen({ winner, myPlayerId, playerHands, player
   const isWinner = winner === myPlayerId;
   const winnerName = isWinner ? 'You' : (isPvp ? `Player ${winner.replace('p', '')}` : 'PC');
   
-  // Combine hands and melds for display
-  const getFullHand = (playerId) => {
-    let hand = playerHands[playerId] || [];
-    if (ruleset === 'rummy_lite' && playerMelds && playerMelds[playerId]) {
-      const melds = playerMelds[playerId].flat();
-      hand = [...hand, ...melds];
+  // Helper to render stacked hand
+  const RenderStackedHand = ({ playerId }) => {
+    if (ruleset === 'rummy_lite') {
+      const melds = playerMelds?.[playerId] || [[], [], []];
+      const handRemnant = playerHands[playerId] || [];
+      
+      const allGroups = [...melds.filter(m => m.length > 0), handRemnant].filter(g => g.length > 0);
+      
+      return (
+        <div className="flex flex-wrap justify-center gap-4 sm:gap-8 px-2 py-4">
+          {allGroups.map((group, groupIdx) => (
+            <div key={groupIdx} className="flex justify-center -space-x-6 sm:-space-x-8">
+              {group.map((card, idx) => (
+                <div 
+                  key={card.id} 
+                  className="w-14 h-20 sm:w-20 sm:h-28 flex-shrink-0 bg-white rounded-lg overflow-hidden border border-slate-300 shadow-md hover:-translate-y-4 hover:z-20 transition-transform relative z-0"
+                  style={{ zIndex: idx }}
+                >
+                  <img src={card.svg} alt={card.name} className="w-full h-full object-contain" />
+                </div>
+              ))}
+            </div>
+          ))}
+        </div>
+      );
+    } else {
+      const hand = playerHands[playerId] || [];
+      return (
+        <div className="flex justify-center -space-x-6 sm:-space-x-8 px-2 py-4">
+          {hand.map((card, idx) => (
+            <div 
+              key={card.id} 
+              className="w-14 h-20 sm:w-20 sm:h-28 flex-shrink-0 bg-white rounded-lg overflow-hidden border border-slate-300 shadow-md hover:-translate-y-4 hover:z-20 transition-transform relative z-0"
+              style={{ zIndex: idx }}
+            >
+              <img src={card.svg} alt={card.name} className="w-full h-full object-contain" />
+            </div>
+          ))}
+        </div>
+      );
     }
-    return hand;
   };
 
-  const myHand = getFullHand(myPlayerId);
-  
   // To avoid crowding, show winner's hand and my hand. If I am the winner, show one opponent.
   const opponentId = winner === myPlayerId ? Object.keys(playerHands).find(id => id !== myPlayerId && playerHands[id]?.length > 0) : winner;
-  const opponentHand = opponentId ? getFullHand(opponentId) : [];
   const opponentName = opponentId === winner ? winnerName : (isPvp ? `Player ${opponentId?.replace('p', '')}` : 'PC');
   return (
     <div className="flex-1 flex flex-col items-center justify-center p-4 relative z-50">
@@ -59,27 +89,15 @@ export default function GameOverScreen({ winner, myPlayerId, playerHands, player
         <div className="space-y-4 py-4 border-y border-slate-850">
           
           {/* Player hand showcase */}
-          <div className="text-left space-y-2">
-            <span className="text-xs font-bold text-blue-400 uppercase tracking-wider">Your Hand</span>
-            <div className="flex gap-1 overflow-x-auto pb-2 custom-scroll">
-              {myHand.map((card) => (
-                <div key={card.id} className="w-12 h-[68px] flex-shrink-0 bg-white rounded-md overflow-hidden border border-slate-300 shadow">
-                  <img src={card.svg} alt={card.name} className="w-full h-full object-contain" />
-                </div>
-              ))}
-            </div>
+          <div className="text-center space-y-1">
+            <span className="text-xs font-bold text-blue-400 uppercase tracking-wider bg-slate-900 px-3 py-1 rounded-full shadow-inner border border-slate-800">Your Hand</span>
+            <RenderStackedHand playerId={myPlayerId} />
           </div>
 
           {/* PC/Opponent hand showcase */}
-          <div className="text-left space-y-2">
-            <span className="text-xs font-bold text-rose-400 uppercase tracking-wider">{opponentName}'s Hand</span>
-            <div className="flex gap-1 overflow-x-auto pb-2 custom-scroll">
-              {opponentHand.map((card) => (
-                <div key={card.id} className="w-12 h-[68px] flex-shrink-0 bg-white rounded-md overflow-hidden border border-slate-300 shadow">
-                  <img src={card.svg} alt={card.name} className="w-full h-full object-contain" />
-                </div>
-              ))}
-            </div>
+          <div className="text-center space-y-1">
+            <span className="text-xs font-bold text-rose-400 uppercase tracking-wider bg-slate-900 px-3 py-1 rounded-full shadow-inner border border-slate-800">{opponentName}'s Hand</span>
+            {opponentId && <RenderStackedHand playerId={opponentId} />}
           </div>
 
         </div>

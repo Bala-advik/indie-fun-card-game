@@ -134,7 +134,7 @@ body,
 }
 
 /* Card hover animation */
-.playing-card-wrapper:hover {
+.playing-card-wrapper:not(.no-hover-lift):hover {
   transform: translateY(-30px) scale(1.1) !important;
   z-index: 100 !important;
 }

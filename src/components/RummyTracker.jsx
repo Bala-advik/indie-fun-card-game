@@ -66,7 +66,7 @@ export default function RummyTracker({ hand, melds, onDropToMeld, onRestoreFromM
             <div className="flex justify-center gap-1 min-h-[20px] sm:min-h-[28px]">
               {/* Render placeholders for empty slots */}
               {Array.from({ length: capacity - melds[i].length }).map((_, idx) => (
-                <div key={`empty-${idx}`} className="w-4 h-5 sm:w-5 sm:h-7 bg-slate-800/50 rounded border border-slate-700/50"></div>
+                <div key={`empty-${idx}`} className="w-3.5 h-4.5 sm:w-5 sm:h-7 bg-slate-800/50 rounded border border-slate-700/50"></div>
               ))}
               
               {/* Render actual cards placed in the meld */}
@@ -74,15 +74,15 @@ export default function RummyTracker({ hand, melds, onDropToMeld, onRestoreFromM
                 <div 
                   key={card.id} 
                   onClick={() => onRestoreFromMeld(card.id, i)}
-                  className="bg-white rounded px-1 py-0.5 min-w-[16px] sm:min-w-[20px] text-center shadow cursor-pointer hover:-translate-y-1 transition-transform"
+                  className="bg-white rounded px-0.5 py-0.5 min-w-[14px] sm:min-w-[20px] text-center shadow cursor-pointer hover:-translate-y-1 transition-transform flex flex-col items-center justify-center"
                   title="Click to return to hand"
                 >
                   {card.isJoker ? (
-                    <span className="text-[8px] sm:text-[10px] font-black text-amber-500 leading-none">JK</span>
+                    <span className="text-[7px] sm:text-[10px] font-black text-amber-500 leading-none">JK</span>
                   ) : (
                     <div className="flex flex-col items-center leading-none">
-                      <span className={`text-[9px] sm:text-[11px] font-black ${SUIT_COLORS[card.suit]}`}>{card.rank}</span>
-                      <span className={`text-[8px] sm:text-[9px] ${SUIT_COLORS[card.suit]}`}>{SUIT_SYMBOLS[card.suit]}</span>
+                      <span className={`text-[8px] sm:text-[11px] font-black ${SUIT_COLORS[card.suit]}`}>{card.rank}</span>
+                      <span className={`text-[7px] sm:text-[9px] ${SUIT_COLORS[card.suit]}`}>{SUIT_SYMBOLS[card.suit]}</span>
                     </div>
                   )}
                 </div>
