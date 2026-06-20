@@ -13,33 +13,31 @@ export default function GameOverScreen({ winner, myPlayerId, playerHands, player
       const allGroups = [...melds.filter(m => m.length > 0), handRemnant].filter(g => g.length > 0);
       
       return (
-        <div className="flex flex-wrap justify-center gap-4 sm:gap-8 px-2 py-4">
-          {allGroups.map((group, groupIdx) => (
-            <div key={groupIdx} className="flex justify-center -space-x-6 sm:-space-x-8">
-              {group.map((card, idx) => (
-                <div 
-                  key={card.id} 
-                  className="w-14 h-20 sm:w-20 sm:h-28 flex-shrink-0 bg-white rounded-lg overflow-hidden border border-slate-300 shadow-md hover:-translate-y-4 hover:z-20 transition-transform relative z-0"
-                  style={{ zIndex: idx }}
-                >
-                  <img src={card.svg} alt={card.name} className="w-full h-full object-contain" />
-                </div>
-              ))}
-            </div>
-          ))}
+        <div className="card-hand-container px-2 py-4 scale-90 sm:scale-100 flex-wrap justify-center">
+          {allGroups.map((group, groupIdx) => {
+            return group.map((card, idx) => (
+              <div 
+                key={`${groupIdx}-${card.id}`} 
+                className={`playing-card-wrapper shrink-0 rounded-xl overflow-hidden bg-white border border-slate-300 shadow-md relative select-none ${idx === 0 && groupIdx !== 0 ? 'rummy-spacer' : ''}`}
+                style={{ zIndex: groupIdx * 10 + idx }}
+              >
+                <img src={card.svg} alt={card.name} className="w-full h-full object-contain pointer-events-none" />
+              </div>
+            ));
+          })}
         </div>
       );
     } else {
       const hand = playerHands[playerId] || [];
       return (
-        <div className="flex justify-center -space-x-6 sm:-space-x-8 px-2 py-4">
+        <div className="card-hand-container px-2 py-4 scale-90 sm:scale-100 justify-center">
           {hand.map((card, idx) => (
             <div 
               key={card.id} 
-              className="w-14 h-20 sm:w-20 sm:h-28 flex-shrink-0 bg-white rounded-lg overflow-hidden border border-slate-300 shadow-md hover:-translate-y-4 hover:z-20 transition-transform relative z-0"
+              className="playing-card-wrapper shrink-0 rounded-xl overflow-hidden bg-white border border-slate-300 shadow-md relative select-none"
               style={{ zIndex: idx }}
             >
-              <img src={card.svg} alt={card.name} className="w-full h-full object-contain" />
+              <img src={card.svg} alt={card.name} className="w-full h-full object-contain pointer-events-none" />
             </div>
           ))}
         </div>
