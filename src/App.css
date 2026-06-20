@@ -45,6 +45,8 @@ body,
   width: 15.5vw;
   height: 21.7vw;
   /* 1 : 1.4 ratio */
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 @media (min-width: 375px) {
@@ -141,8 +143,14 @@ body,
 
 /* Selected Card status */
 .playing-card-wrapper.selected {
-  transform: translateY(-40px) scale(1.12) !important;
+  transform: translateY(-20px) scale(1.08) !important;
   z-index: 90 !important;
+}
+
+@media (min-width: 640px) {
+  .playing-card-wrapper.selected {
+    transform: translateY(-40px) scale(1.12) !important;
+  }
 }
 
 .playing-card-wrapper.selected::after {

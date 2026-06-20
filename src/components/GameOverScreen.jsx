@@ -13,7 +13,7 @@ export default function GameOverScreen({ winner, myPlayerId, playerHands, player
       const allGroups = [...melds.filter(m => m.length > 0), handRemnant].filter(g => g.length > 0);
       
       return (
-        <div className="card-hand-container px-2 py-4 scale-90 sm:scale-100 flex-wrap justify-center">
+        <div className="card-hand-container !min-h-[100px] sm:!min-h-[160px] !pb-2 px-2 py-2 scale-75 sm:scale-90 md:scale-100 flex-wrap justify-center origin-bottom">
           {allGroups.map((group, groupIdx) => {
             return group.map((card, idx) => (
               <div 
@@ -30,7 +30,7 @@ export default function GameOverScreen({ winner, myPlayerId, playerHands, player
     } else {
       const hand = playerHands[playerId] || [];
       return (
-        <div className="card-hand-container px-2 py-4 scale-90 sm:scale-100 justify-center">
+        <div className="card-hand-container !min-h-[100px] sm:!min-h-[160px] !pb-2 px-2 py-2 scale-75 sm:scale-90 md:scale-100 justify-center origin-bottom">
           {hand.map((card, idx) => (
             <div 
               key={card.id} 
@@ -49,13 +49,13 @@ export default function GameOverScreen({ winner, myPlayerId, playerHands, player
   const opponentId = winner === myPlayerId ? Object.keys(playerHands).find(id => id !== myPlayerId && playerHands[id]?.length > 0) : winner;
   const opponentName = opponentId === winner ? winnerName : (isPvp ? `Player ${opponentId?.replace('p', '')}` : 'PC');
   return (
-    <div className="flex-1 flex flex-col items-center justify-center p-4 relative z-50">
+    <div className="flex-1 flex flex-col items-center justify-center p-2 sm:p-4 relative z-50">
       <div className="absolute inset-0 bg-slate-950/90 z-0"></div>
 
-      <div className="z-10 max-w-3xl w-full text-center space-y-6 bg-slate-900 p-6 md:p-10 rounded-[2.5rem] border border-slate-800 shadow-2xl relative">
+      <div className="z-10 max-w-3xl w-full max-h-[95vh] flex flex-col text-center bg-slate-900 p-4 sm:p-6 md:p-10 rounded-3xl sm:rounded-[2.5rem] border border-slate-800 shadow-2xl relative overflow-hidden">
         
         {/* Victory/Defeat Banner */}
-        <div className="flex flex-col items-center gap-2">
+        <div className="flex flex-col items-center gap-1 sm:gap-2 shrink-0">
           {isWinner ? (
             <>
               <span className="text-6xl animate-bounce">🏆</span>
@@ -83,8 +83,8 @@ export default function GameOverScreen({ winner, myPlayerId, playerHands, player
           )}
         </div>
 
-        {/* Showcase Hands */}
-        <div className="space-y-4 py-4 border-y border-slate-850">
+        {/* Showcase Hands (Scrollable Area) */}
+        <div className="flex-1 overflow-y-auto overflow-x-hidden min-h-0 space-y-2 py-2 border-y border-slate-850 my-2 sm:my-4 scrollbar-hide">
           
           {/* Player hand showcase */}
           <div className="text-center space-y-1">
@@ -100,7 +100,8 @@ export default function GameOverScreen({ winner, myPlayerId, playerHands, player
 
         </div>
 
-        <div className="flex flex-col sm:flex-row gap-4 justify-center pt-2">
+        {/* Buttons */}
+        <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 justify-center pt-2 shrink-0">
           {(!isPvp || isHost) ? (
             <button
               onClick={onRestart}
