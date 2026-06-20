@@ -44,28 +44,7 @@ export default function Card({
     }
   };
 
-  const handleTouchStart = (e) => {
-    // Only drag on single touch
-    if (e.touches.length === 1) {
-      onDragStart({ dataTransfer: { effectAllowed: '' } }, card.id);
-    }
-  };
-
-  const handleTouchEnd = (e) => {
-    const touch = e.changedTouches[0];
-    const dropTarget = document.elementFromPoint(touch.clientX, touch.clientY);
-    const meldTarget = dropTarget?.closest('[data-meld-index]');
-    const targetCardId = dropTarget?.closest('.playing-card-wrapper')?.getAttribute('data-card-id');
-    
-    if (meldTarget && onDropToMeldMobile) {
-      const meldIndex = parseInt(meldTarget.getAttribute('data-meld-index'), 10);
-      onDropToMeldMobile(card.id, meldIndex);
-    } else if (targetCardId && targetCardId !== card.id) {
-      onDrop({ preventDefault: () => {} }, targetCardId);
-    } else if (dropTarget) {
-      onDrop({ preventDefault: () => {} }, null);
-    }
-  };
+  // Touch drag handlers removed to fix mobile click selection
 
   return (
     <div
@@ -74,8 +53,6 @@ export default function Card({
       onDragStart={(e) => onDragStart(e, card.id)}
       onDragOver={onDragOver}
       onDrop={(e) => onDrop(e, card.id)}
-      onTouchStart={handleTouchStart}
-      onTouchEnd={handleTouchEnd}
       onClick={handleCardClick}
       onDoubleClick={handleCardDoubleClick}
       className={`playing-card-wrapper shrink-0 rounded-xl overflow-hidden bg-white shadow-xl ${isSelected ? 'selected' : ''} ${isNewlyDrawn ? 'ring-4 ring-blue-500 ring-offset-2 ring-offset-slate-900 shadow-[0_0_20px_rgba(59,130,246,0.6)]' : ''} ${isSpacer ? 'rummy-spacer' : ''}`}

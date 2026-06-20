@@ -417,20 +417,34 @@ export default function App() {
   };
 
   const handleDropToMeld = (playerId, cardId, meldIndex) => {
-    const hand = playerHands[playerId];
-    const card = hand.find(c => c.id === cardId);
-    if (!card) return;
+    handleMultiDropToMeld(playerId, [cardId], meldIndex);
+  };
 
-    const newHands = { ...playerHands, [playerId]: hand.filter(c => c.id !== cardId) };
+  const handleMultiDropToMeld = (playerId, cardIds, meldIndex) => {
+    const hand = playerHands[playerId];
+    const cardsToMove = hand.filter(c => cardIds.includes(c.id));
+    if (cardsToMove.length === 0) return;
+
+    // Check capacity
+    const currentMeldLength = playerMelds[playerId][meldIndex].length;
+    const capacity = meldIndex === 0 ? 4 : 3;
+    if (currentMeldLength + cardsToMove.length > capacity) {
+      logAction("Cannot move cards: Meld slot would exceed capacity!");
+      return;
+    }
+
+    const newHands = { ...playerHands, [playerId]: hand.filter(c => !cardIds.includes(c.id)) };
     const newMelds = { ...playerMelds };
-    newMelds[playerId][meldIndex] = [...newMelds[playerId][meldIndex], card];
+    newMelds[playerId][meldIndex] = [...newMelds[playerId][meldIndex], ...cardsToMove];
 
     setPlayerHands(newHands);
     setPlayerMelds(newMelds);
-    setSelectedCardIds(prev => prev.filter(id => id !== cardId));
+    setSelectedCardIds(prev => prev.filter(id => !cardIds.includes(id)));
 
     if (playerId === myPlayerId && myRole !== 'host') {
-      hostConnRef.current.send({ type: 'action', actionData: { action: 'drop_meld', cardId, meldIndex } });
+      cardIds.forEach(id => {
+        hostConnRef.current.send({ type: 'action', actionData: { action: 'drop_meld', cardId: id, meldIndex } });
+      });
     } else if (myRole === 'host') {
       broadcastState({ deck, discardPile, playerHands: newHands, playerMelds: newMelds, activePlayer, turnPhase, newlyDrawnCardId, winner });
     }
@@ -804,12 +818,14 @@ export default function App() {
           }
         }, 1500);
 
-        return () => clearTimeout(timerDiscard);
       }, 1500);
 
-      return () => clearTimeout(timerDraw);
+      return () => {
+        clearTimeout(timerDraw);
+        pcActionInProgress.current = false;
+      };
     }
-  }, [activePlayer, playerHands, deck, discardPile, gameState, gameMode, numPlayers]);
+  }, [activePlayer, gameState, gameMode, ruleset]);
 
   const [draggedCardId, setDraggedCardId] = useState(null);
 
@@ -973,6 +989,7 @@ export default function App() {
                 melds={playerMelds[myPlayerId] || [[], [], []]}
                 onDropToMeld={(cardId, meldIndex) => handleDropToMeld(myPlayerId, cardId, meldIndex)}
                 onRestoreFromMeld={(cardId, meldIndex) => handleRestoreFromMeld(myPlayerId, cardId, meldIndex)}
+                onMeldClick={(meldIndex) => handleMultiDropToMeld(myPlayerId, selectedCardIds, meldIndex)}
               />
             ) : (
               <SequenceTracker

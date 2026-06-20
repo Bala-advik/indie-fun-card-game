@@ -2,7 +2,7 @@ import React from 'react';
 import { validateRummyWin, isValidMeld } from '../utils/rummyLogic';
 import { SUIT_COLORS, SUIT_SYMBOLS } from '../utils/deck';
 
-export default function RummyTracker({ hand, melds, onDropToMeld, onRestoreFromMeld }) {
+export default function RummyTracker({ hand, melds, onDropToMeld, onRestoreFromMeld, onMeldClick }) {
   const capacities = [4, 3, 3];
 
   const handleDragOver = (e) => {
@@ -57,7 +57,8 @@ export default function RummyTracker({ hand, melds, onDropToMeld, onRestoreFromM
             data-meld-index={i}
             onDragOver={handleDragOver}
             onDrop={(e) => handleDrop(e, i)}
-            className={`flex-1 rounded-lg p-1 sm:p-2 text-center transition ${slotClass}`}
+            onClick={() => onMeldClick && onMeldClick(i)}
+            className={`flex-1 rounded-lg p-1 sm:p-2 text-center transition cursor-pointer ${slotClass}`}
           >
             <div className={`text-[7px] sm:text-[10px] font-bold mb-1 uppercase tracking-wider ${textClass}`}>
               {capacity} {slotValid ? '✅' : slotError ? '❌' : `(${melds[i].length}/${capacity})`}
