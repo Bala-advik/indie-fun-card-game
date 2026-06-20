@@ -55,14 +55,18 @@ export default function Card({
       onDrop={(e) => onDrop(e, card.id)}
       onClick={handleCardClick}
       onDoubleClick={handleCardDoubleClick}
-      className={`playing-card-wrapper shrink-0 rounded-xl overflow-hidden bg-white shadow-xl ${isSelected ? 'selected' : ''} ${isNewlyDrawn ? 'ring-4 ring-blue-500 ring-offset-2 ring-offset-slate-900 shadow-[0_0_20px_rgba(59,130,246,0.6)]' : ''} ${isSpacer ? 'rummy-spacer' : ''}`}
+      className={`playing-card-wrapper shrink-0 ${isSelected ? 'selected' : ''} ${isSpacer ? 'rummy-spacer' : ''}`}
       style={style}
     >
-      <img
-        src={card.svg}
-        alt={card.name}
-        className="w-full h-full object-contain select-none"
-      />
+      <div 
+        className={`card-inner w-full h-full rounded-xl overflow-hidden bg-white shadow-xl ${isSelected ? 'selected-card-jump' : ''} ${isNewlyDrawn ? 'ring-4 ring-blue-500 ring-offset-2 ring-offset-slate-900 shadow-[0_0_20px_rgba(59,130,246,0.6)]' : ''}`}
+      >
+        <img
+          src={card.svg}
+          alt={card.name}
+          className="w-full h-full object-contain select-none"
+        />
+      </div>
 
       {/* Newly Drawn Tag */}
       {isNewlyDrawn && (

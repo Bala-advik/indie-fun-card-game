@@ -135,25 +135,35 @@ body,
   }
 }
 
+/* Card inner wrapper for jump animations without losing rotation */
+.card-inner {
+  transition: transform 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+  transform-origin: bottom center;
+}
+
 /* Card hover animation */
+.playing-card-wrapper:not(.no-hover-lift):hover .card-inner {
+  transform: translateY(-30px) scale(1.1);
+}
 .playing-card-wrapper:not(.no-hover-lift):hover {
-  transform: translateY(-30px) scale(1.1) !important;
   z-index: 100 !important;
 }
 
 /* Selected Card status */
+.card-inner.selected-card-jump {
+  transform: translateY(-20px) scale(1.08);
+}
 .playing-card-wrapper.selected {
-  transform: translateY(-20px) scale(1.08) !important;
   z-index: 90 !important;
 }
 
 @media (min-width: 640px) {
-  .playing-card-wrapper.selected {
-    transform: translateY(-40px) scale(1.12) !important;
+  .card-inner.selected-card-jump {
+    transform: translateY(-40px) scale(1.12);
   }
 }
 
-.playing-card-wrapper.selected::after {
+.card-inner.selected-card-jump::after {
   content: '';
   position: absolute;
   inset: -3px;
