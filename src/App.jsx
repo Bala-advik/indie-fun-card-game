@@ -435,14 +435,18 @@ export default function App() {
     }
 
     const newHands = { ...playerHands, [playerId]: hand.filter(c => !cardIds.includes(c.id)) };
-    const newMelds = { ...playerMelds };
-    newMelds[playerId][meldIndex] = [...newMelds[playerId][meldIndex], ...cardsToMove];
+    const newMelds = { 
+      ...playerMelds, 
+      [playerId]: playerMelds[playerId].map((meld, i) => 
+        i === meldIndex ? [...meld, ...cardsToMove] : meld
+      )
+    };
 
     setPlayerHands(newHands);
     setPlayerMelds(newMelds);
-    setSelectedCardIds(prev => prev.filter(id => !cardIds.includes(id)));
+    setSelectedCardIds([]);
 
-    if (playerId === myPlayerId && myRole !== 'host') {
+    if (playerId === myPlayerId && myRole === 'guest') {
       cardIds.forEach(id => {
         hostConnRef.current.send({ type: 'action', actionData: { action: 'drop_meld', cardId: id, meldIndex } });
       });
@@ -456,14 +460,18 @@ export default function App() {
     const card = melds[meldIndex].find(c => c.id === cardId);
     if (!card) return;
 
-    const newMelds = { ...playerMelds };
-    newMelds[playerId][meldIndex] = newMelds[playerId][meldIndex].filter(c => c.id !== cardId);
+    const newMelds = {
+      ...playerMelds,
+      [playerId]: playerMelds[playerId].map((meld, i) => 
+        i === meldIndex ? meld.filter(c => c.id !== cardId) : meld
+      )
+    };
     const newHands = { ...playerHands, [playerId]: [...playerHands[playerId], card] };
 
     setPlayerHands(newHands);
     setPlayerMelds(newMelds);
 
-    if (playerId === myPlayerId && myRole !== 'host') {
+    if (playerId === myPlayerId && myRole === 'guest') {
       hostConnRef.current.send({ type: 'action', actionData: { action: 'restore_meld', cardId, meldIndex } });
     } else if (myRole === 'host') {
       broadcastState({ deck, discardPile, playerHands: newHands, playerMelds: newMelds, activePlayer, turnPhase, newlyDrawnCardId, winner });
@@ -544,14 +552,12 @@ export default function App() {
   const toggleCardSelection = (cardId) => {
     if (activePlayer !== myPlayerId) return;
     setDeclareError(null);
-    if (ruleset === 'royal_sequence') {
-      setSelectedCardIds([cardId]);
-    } else {
-      setSelectedCardIds(prev => {
-        if (prev.includes(cardId)) return prev.filter(id => id !== cardId);
-        return [...prev, cardId];
-      });
-    }
+    setSelectedCardIds(prev => {
+      if (prev.includes(cardId)) {
+        return [];
+      }
+      return [cardId];
+    });
   };
 
   const handleMeldSelection = () => {
@@ -991,6 +997,7 @@ export default function App() {
                 onDropToMeld={(cardId, meldIndex) => handleDropToMeld(myPlayerId, cardId, meldIndex)}
                 onRestoreFromMeld={(cardId, meldIndex) => handleRestoreFromMeld(myPlayerId, cardId, meldIndex)}
                 onMeldClick={(meldIndex) => handleMultiDropToMeld(myPlayerId, selectedCardIds, meldIndex)}
+                onSortMelds={() => handlePlayerSort('melds')}
               />
             ) : (
               <SequenceTracker

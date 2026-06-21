@@ -2,7 +2,7 @@ import React from 'react';
 import { validateRummyWin, isValidMeld } from '../utils/rummyLogic';
 import { SUIT_COLORS, SUIT_SYMBOLS } from '../utils/deck';
 
-export default function RummyTracker({ hand, melds, onDropToMeld, onRestoreFromMeld, onMeldClick }) {
+export default function RummyTracker({ hand, melds, onDropToMeld, onRestoreFromMeld, onMeldClick, onSortMelds }) {
   const capacities = [4, 3, 3];
 
   const handleDragOver = (e) => {

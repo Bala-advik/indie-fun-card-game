@@ -59,36 +59,36 @@ export default function Card({
       style={style}
     >
       <div 
-        className={`card-inner w-full h-full rounded-xl overflow-hidden bg-white shadow-xl ${isSelected ? 'selected-card-jump' : ''} ${isNewlyDrawn ? 'ring-4 ring-blue-500 ring-offset-2 ring-offset-slate-900 shadow-[0_0_20px_rgba(59,130,246,0.6)]' : ''}`}
+        className={`card-inner w-full h-full rounded-xl overflow-hidden bg-white shadow-xl relative ${isSelected ? 'selected-card-jump' : ''} ${isNewlyDrawn ? 'ring-4 ring-blue-500 ring-offset-2 ring-offset-slate-900 shadow-[0_0_20px_rgba(59,130,246,0.6)]' : ''}`}
       >
         <img
           src={card.svg}
           alt={card.name}
           className="w-full h-full object-contain select-none"
         />
-      </div>
+        
+        {/* Newly Drawn Tag */}
+        {isNewlyDrawn && (
+          <span className="absolute top-1 right-1 bg-blue-600 text-slate-100 text-[7px] sm:text-[9px] font-black px-1 py-0.5 rounded shadow border border-blue-400 uppercase tracking-wider z-10">
+            New
+          </span>
+        )}
 
-      {/* Newly Drawn Tag */}
-      {isNewlyDrawn && (
-        <span className="absolute top-1 right-1 bg-blue-600 text-slate-100 text-[7px] sm:text-[9px] font-black px-1 py-0.5 rounded shadow border border-blue-400 uppercase tracking-wider z-10">
-          New
-        </span>
-      )}
-
-      {/* Discard Overlay Action Button on Card (Tap to confirm) */}
-      {showDiscardOverlay && turnState === 'player_discard' && isSelected && (
-        <div
-          onClick={(e) => {
-            e.stopPropagation();
-            onDiscard(card.id);
-          }}
-          className="absolute inset-0 bg-slate-950/70 flex items-center justify-center z-50 cursor-pointer animate-fade-in"
-        >
-          <div className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-lg px-2.5 py-1 text-[10px] md:text-xs tracking-wider shadow-lg">
-            DISCARD
+        {/* Discard Overlay Action Button on Card (Tap to confirm) */}
+        {showDiscardOverlay && turnState === 'player_discard' && isSelected && (
+          <div
+            onClick={(e) => {
+              e.stopPropagation();
+              onDiscard(card.id);
+            }}
+            className="absolute inset-0 bg-slate-950/70 flex items-center justify-center z-50 cursor-pointer animate-fade-in"
+          >
+            <div className="bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-lg px-2.5 py-1 text-[10px] md:text-xs tracking-wider shadow-lg">
+              DISCARD
+            </div>
           </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   );
 }
