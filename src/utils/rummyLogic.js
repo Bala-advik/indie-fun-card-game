@@ -21,15 +21,27 @@ export function isValidRun(cards, isPureCheck = false) {
   // Sort by rank value to check consecutiveness
   const sortedNonJokers = [...nonJokers].sort((a, b) => a.value - b.value);
 
-  // Check if they can form a sequence with the available jokers
-  let gaps = 0;
-  for (let i = 0; i < sortedNonJokers.length - 1; i++) {
-    const diff = sortedNonJokers[i + 1].value - sortedNonJokers[i].value;
-    if (diff === 0) return false; // Duplicate card in a run is invalid
-    gaps += diff - 1;
+  const checkGaps = (cardsArr) => {
+    let gapsCount = 0;
+    for (let i = 0; i < cardsArr.length - 1; i++) {
+      const diff = cardsArr[i + 1].value - cardsArr[i].value;
+      if (diff <= 0) return Infinity; // Duplicate card or unordered
+      gapsCount += diff - 1;
+    }
+    return gapsCount;
+  };
+
+  let minGaps = checkGaps(sortedNonJokers);
+
+  // Allow Ace to act as High (value 14) at the end of a run (e.g. Q, K, A)
+  if (sortedNonJokers[0].value === 1) {
+    const aceHigh = [...sortedNonJokers];
+    const ace = aceHigh.shift();
+    aceHigh.push({ ...ace, value: 14 });
+    minGaps = Math.min(minGaps, checkGaps(aceHigh));
   }
 
-  return gaps <= jokers.length;
+  return minGaps <= jokers.length;
 }
 
 /**
