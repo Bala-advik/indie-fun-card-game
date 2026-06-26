@@ -1,8 +1,8 @@
 import React from 'react';
 
-export default function GameOverScreen({ winner, myPlayerId, playerHands, playerMelds, isPvp, isHost, ruleset, onRestart, onMainMenu }) {
+export default function GameOverScreen({ winner, myPlayerId, playerNames, playerHands, playerMelds, isPvp, isHost, ruleset, onRestart, onMainMenu }) {
   const isWinner = winner === myPlayerId;
-  const winnerName = isWinner ? 'You' : (isPvp ? `Player ${winner.replace('p', '')}` : 'PC');
+  const winnerName = isWinner ? 'You' : (playerNames ? playerNames[winner] : (isPvp ? `Player ${winner.replace('p', '')}` : 'PC'));
   
   // Helper to render stacked hand
   const RenderStackedHand = ({ playerId }) => {
@@ -47,7 +47,7 @@ export default function GameOverScreen({ winner, myPlayerId, playerHands, player
 
   // To avoid crowding, show winner's hand and my hand. If I am the winner, show one opponent.
   const opponentId = winner === myPlayerId ? Object.keys(playerHands).find(id => id !== myPlayerId && playerHands[id]?.length > 0) : winner;
-  const opponentName = opponentId === winner ? winnerName : (isPvp ? `Player ${opponentId?.replace('p', '')}` : 'PC');
+  const opponentName = opponentId === winner ? winnerName : (playerNames ? playerNames[opponentId] : (isPvp ? `Player ${opponentId?.replace('p', '')}` : 'PC'));
   return (
     <div className="flex-1 flex flex-col items-center justify-center p-2 sm:p-4 relative z-50">
       <div className="absolute inset-0 bg-slate-950/90 z-0"></div>

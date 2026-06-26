@@ -56,6 +56,7 @@ export default function App() {
   const [deck, setDeck] = useState([]);
   const [discardPile, setDiscardPile] = useState([]);
   const pcActionInProgress = useRef(false);
+  const [playerNames, setPlayerNames] = useState({ p1: 'Player 1', p2: 'Player 2', p3: 'Player 3', p4: 'Player 4' });
   const [playerHands, setPlayerHands] = useState({ p1: [], p2: [], p3: [], p4: [] });
   const [playerMelds, setPlayerMelds] = useState({ p1: [[], [], []], p2: [[], [], []], p3: [[], [], []], p4: [[], [], []] });
 
@@ -72,6 +73,7 @@ export default function App() {
   const [showLogs, setShowLogs] = useState(false);
   const [showQuickChat, setShowQuickChat] = useState(false);
   const [showQuitConfirm, setShowQuitConfirm] = useState(false);
+  const [disconnectAlert, setDisconnectAlert] = useState(null);
   const [gameLogs, setGameLogs] = useState([]);
   const [pcStatus, setPcStatus] = useState('Waiting for your turn...');
   const [isPcThinking, setIsPcThinking] = useState(false);
@@ -92,11 +94,7 @@ export default function App() {
   };
 
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search);
-    const roomFromUrl = urlParams.get('room');
-    if (roomFromUrl) {
-      joinPvpLobby(roomFromUrl);
-    }
+    // URL processing is now handled in WelcomeScreen to allow name entry
     return () => cleanupPeer();
   }, []);
 
@@ -123,12 +121,18 @@ export default function App() {
     return `p${nextNum}`;
   };
 
-  const startPcGame = (selectedNumPlayers = 2, selectedRuleset = 'royal_sequence') => {
+  const startPcGame = (selectedNumPlayers = 2, selectedRuleset = 'royal_sequence', playerName = '') => {
     setNumPlayers(selectedNumPlayers);
     setRuleset(selectedRuleset);
     setGameMode('pc');
     setMyRole('none');
     setMyPlayerId('p1');
+    setPlayerNames({
+      p1: playerName || 'Player 1',
+      p2: 'Bot Alpha',
+      p3: 'CPU Master',
+      p4: 'AI Genius'
+    });
 
     const freshDeck = shuffle(createDeck(selectedNumPlayers));
     const newHands = { p1: [], p2: [], p3: [], p4: [] };
@@ -162,13 +166,14 @@ export default function App() {
     logAction(`Discard pile starts with ${firstDiscard.name}.`);
   };
 
-  const createPvpLobby = (selectedNumPlayers = 2, selectedRuleset = 'royal_sequence') => {
+  const createPvpLobby = (selectedNumPlayers = 2, selectedRuleset = 'royal_sequence', hostName = '') => {
     cleanupPeer();
     setNumPlayers(selectedNumPlayers);
     setRuleset(selectedRuleset);
     setGameMode('pvp');
     setMyRole('host');
     setMyPlayerId('p1');
+    setPlayerNames(prev => ({ ...prev, p1: hostName || 'Player 1' }));
     setConnectionState('connecting');
 
     const peer = initPeer(
@@ -189,7 +194,17 @@ export default function App() {
           const newGuestId = `p${currentGuestsCount + 2}`;
           guestConnsRef.current[newGuestId] = incomingConn;
           setConnectedGuests(Object.keys(guestConnsRef.current).length);
-          logAction(`Player ${newGuestId.replace('p', '')} connected!`);
+          
+          const guestName = incomingConn.metadata?.name || `Player ${currentGuestsCount + 2}`;
+          setPlayerNames(prev => {
+            const next = { ...prev, [newGuestId]: guestName };
+            Object.values(guestConnsRef.current).forEach(conn => {
+              if (conn.open) conn.send({ type: 'sync_names', playerNames: next });
+            });
+            return next;
+          });
+          
+          logAction(`${guestName} connected!`);
 
           incomingConn.send({ type: 'assign_id', playerId: newGuestId, numPlayers: selectedNumPlayers });
 
@@ -202,8 +217,8 @@ export default function App() {
           });
 
           incomingConn.on('close', () => {
-            logAction(`Player ${newGuestId.replace('p', '')} disconnected.`);
-            alert(`Player ${newGuestId.replace('p', '')} disconnected. Game over.`);
+            logAction(`A player disconnected.`);
+            setDisconnectAlert({ title: 'Player Disconnected', message: 'A player has disconnected. Game over.' });
             setGameState('welcome');
             cleanupPeer();
           });
@@ -235,6 +250,7 @@ export default function App() {
 
     const initialState = {
       ruleset,
+      playerNames,
       deck: freshDeck,
       discardPile: [firstDiscard],
       playerHands: newHands,
@@ -261,7 +277,7 @@ export default function App() {
     broadcastState(initialState);
   };
 
-  const joinPvpLobby = (hostId) => {
+  const joinPvpLobby = (hostId, guestName = '') => {
     cleanupPeer();
     setGameMode('pvp');
     setMyRole('guest');
@@ -272,6 +288,7 @@ export default function App() {
         const conn = connectToHost(
           peer,
           hostId,
+          guestName,
           (establishedConn) => {
             hostConnRef.current = establishedConn;
             setConnectionState('waiting');
@@ -282,6 +299,8 @@ export default function App() {
             if (data.type === 'assign_id') {
               setMyPlayerId(data.playerId);
               setNumPlayers(data.numPlayers);
+            } else if (data.type === 'sync_names') {
+              setPlayerNames(data.playerNames);
             } else if (data.type === 'sync_state') {
               handleSyncState(data.state);
             } else if (data.type === 'chat') {
@@ -291,14 +310,14 @@ export default function App() {
                 return newChats;
               });
             } else if (data.type === 'error') {
-              alert(data.message);
+              setDisconnectAlert({ title: 'Connection Error', message: data.message });
               cleanupPeer();
               setGameState('welcome');
             }
           },
           () => {
             logAction('Connection closed by host.');
-            alert('Host disconnected. Returning to main menu.');
+            setDisconnectAlert({ title: 'Host Disconnected', message: 'The host has closed the lobby. Returning to main menu.' });
             setGameState('welcome');
             cleanupPeer();
             window.history.replaceState({}, document.title, window.location.pathname);
@@ -323,6 +342,7 @@ export default function App() {
 
   const handleSyncState = (s) => {
     if (s.ruleset) setRuleset(s.ruleset);
+    if (s.playerNames) setPlayerNames(s.playerNames);
     setDeck(s.deck);
     setDiscardPile(s.discardPile);
     if (s.playerHands) setPlayerHands(s.playerHands);
@@ -336,7 +356,7 @@ export default function App() {
 
     if (s.winner) {
       setGameState('game_over');
-      logAction(`Game Over! Winner: Player ${s.winner.replace('p', '')}`);
+      logAction(`Game Over! Winner: ${s.playerNames ? s.playerNames[s.winner] : 'Player ' + s.winner.replace('p', '')}`);
     } else {
       setGameState('playing');
     }
@@ -510,11 +530,11 @@ export default function App() {
         }
       }
       drawnCard = nextDeck.pop();
-      logAction(`Player ${playerId.replace('p', '')} drew from Deck.`);
+      logAction(`${playerNames[playerId]} drew from Deck.`);
     } else {
       if (nextDiscard.length === 0) return;
       drawnCard = nextDiscard.pop();
-      logAction(`Player ${playerId.replace('p', '')} drew open card: ${drawnCard.name}.`);
+      logAction(`${playerNames[playerId]} drew open card: ${drawnCard.name}.`);
     }
 
     const nextHands = { ...playerHands };
@@ -664,7 +684,7 @@ export default function App() {
 
     setWinner(playerId);
     setGameState('game_over');
-    logAction(`🏆 Player ${playerId.replace('p', '')} declared a valid Rummy Lite win!`);
+    logAction(`🏆 ${playerNames[playerId]} declared a valid Rummy Lite win!`);
 
     const winState = {
       deck,
@@ -712,7 +732,7 @@ export default function App() {
     if (isWin) {
       setWinner(playerId);
       setGameState('game_over');
-      logAction(`🏆 Player ${playerId.replace('p', '')} declared win!`);
+      logAction(`🏆 ${playerNames[playerId]} declared win!`);
 
       const winState = {
         deck,
@@ -730,7 +750,7 @@ export default function App() {
 
     setTurnPhase('draw');
     setActivePlayer(nextActivePlayer);
-    logAction(`Player ${playerId.replace('p', '')} discarded ${cardToDiscard.name}.`);
+    logAction(`${playerNames[playerId]} discarded ${cardToDiscard.name}.`);
 
     const nextState = {
       deck,
@@ -750,7 +770,7 @@ export default function App() {
       if (pcActionInProgress.current) return;
       pcActionInProgress.current = true;
       setIsPcThinking(true);
-      setPcStatus(`Player ${activePlayer.replace('p', '')} Thinking...`);
+      setPcStatus(`${playerNames[activePlayer]} Thinking...`);
 
       const timerDraw = setTimeout(() => {
         const topDiscard = discardPile[discardPile.length - 1];
@@ -764,8 +784,8 @@ export default function App() {
 
         if (topDiscard && (topDiscard.isJoker || !uniquePcRanks.has(topDiscard.rank))) {
           drawnCard = nextDiscard.pop();
-          setPcStatus(`Player ${activePlayer.replace('p', '')} drew ${topDiscard.name} from Discard.`);
-          logAction(`Player ${activePlayer.replace('p', '')} drew open card: ${topDiscard.name}.`);
+          setPcStatus(`${playerNames[activePlayer]} drew ${topDiscard.name} from Discard.`);
+          logAction(`${playerNames[activePlayer]} drew open card: ${topDiscard.name}.`);
         } else {
           if (nextDeck.length === 0) {
             if (nextDiscard.length > 1) {
@@ -774,7 +794,7 @@ export default function App() {
               nextDiscard = [currentTop];
               logAction('Deck exhausted. Reshuffled discard pile.');
             } else {
-              logAction(`No cards left for Player ${activePlayer.replace('p', '')} to draw!`);
+              logAction(`No cards left for ${playerNames[activePlayer]} to draw!`);
               setIsPcThinking(false);
               pcActionInProgress.current = false;
               setActivePlayer(getNextPlayer(activePlayer));
@@ -783,8 +803,8 @@ export default function App() {
             }
           }
           drawnCard = nextDeck.pop();
-          setPcStatus(`Player ${activePlayer.replace('p', '')} drew from the Deck.`);
-          logAction(`Player ${activePlayer.replace('p', '')} drew a card from the deck.`);
+          setPcStatus(`${playerNames[activePlayer]} drew from the Deck.`);
+          logAction(`${playerNames[activePlayer]} drew a card from the deck.`);
         }
 
         nextPcHand.push(drawnCard);
@@ -801,7 +821,7 @@ export default function App() {
           const finalDiscardPile = [...nextDiscard, cardToDiscard];
           setDiscardPile(finalDiscardPile);
 
-          logAction(`Player ${activePlayer.replace('p', '')} discarded: ${cardToDiscard.name}.`);
+          logAction(`${playerNames[activePlayer]} discarded: ${cardToDiscard.name}.`);
           setPcStatus(`Waiting for your turn...`);
           setIsPcThinking(false);
           pcActionInProgress.current = false;
@@ -817,7 +837,7 @@ export default function App() {
             setTimeout(() => {
               setWinner(activePlayer);
               setGameState('game_over');
-              logAction(`💻 Player ${activePlayer.replace('p', '')} declared victory!`);
+              logAction(`💻 ${playerNames[activePlayer]} declared victory!`);
             }, 1000);
           } else {
             setActivePlayer(getNextPlayer(activePlayer));
@@ -977,7 +997,7 @@ export default function App() {
                           <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
                         </span>
                       )}
-                      <span className="font-bold">{gameMode === 'pc' ? 'Computer' : 'Player'} {i + 1}</span>
+                      <span className="font-bold">{playerNames[pId]}</span>
                     </div>
                     <div className="relative mt-1">
                       <div className="w-8 h-12 card-back-pattern-red rounded shadow-md border-[1.5px] border-slate-200"></div>
@@ -1181,6 +1201,7 @@ export default function App() {
         <GameOverScreen
           winner={winner}
           myPlayerId={myPlayerId}
+          playerNames={playerNames}
           playerHands={playerHands}
           playerMelds={playerMelds}
           isPvp={gameMode === 'pvp'}
@@ -1201,6 +1222,16 @@ export default function App() {
           cancelText="Cancel"
           onConfirm={executeQuit}
           onCancel={() => setShowQuitConfirm(false)}
+        />
+      )}
+
+      {disconnectAlert && (
+        <ConfirmModal
+          title={disconnectAlert.title}
+          message={disconnectAlert.message}
+          confirmText="OK"
+          onConfirm={() => setDisconnectAlert(null)}
+          hideCancel={true}
         />
       )}
     </div>

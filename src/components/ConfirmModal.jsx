@@ -1,6 +1,6 @@
 import React from 'react';
 
-export default function ConfirmModal({ title, message, onConfirm, onCancel, confirmText = 'Confirm', cancelText = 'Cancel' }) {
+export default function ConfirmModal({ title, message, onConfirm, onCancel, confirmText = 'Confirm', cancelText = 'Cancel', hideCancel = false }) {
   return (
     <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-[9999] flex items-center justify-center p-4">
       <div className="bg-slate-900 border border-slate-700 rounded-2xl shadow-2xl max-w-sm w-full p-6 text-center animate-fade-in relative overflow-hidden">
@@ -16,15 +16,17 @@ export default function ConfirmModal({ title, message, onConfirm, onCancel, conf
         </p>
 
         <div className="flex gap-3 justify-center relative z-10">
-          <button
-            onClick={onCancel}
-            className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl transition cursor-pointer text-sm w-full"
-          >
-            {cancelText}
-          </button>
+          {!hideCancel && (
+            <button
+              onClick={onCancel}
+              className="px-5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold rounded-xl transition cursor-pointer text-sm w-full"
+            >
+              {cancelText}
+            </button>
+          )}
           <button
             onClick={onConfirm}
-            className="px-5 py-2.5 bg-rose-600 hover:bg-rose-500 text-slate-100 font-bold rounded-xl transition cursor-pointer shadow-[0_0_15px_rgba(225,29,72,0.3)] text-sm w-full"
+            className={`px-5 py-2.5 bg-rose-600 hover:bg-rose-500 text-slate-100 font-bold rounded-xl transition cursor-pointer shadow-[0_0_15px_rgba(225,29,72,0.3)] text-sm ${hideCancel ? 'w-full' : 'w-full'}`}
           >
             {confirmText}
           </button>

@@ -27,10 +27,11 @@ export function initPeer(onOpen, onConnection, onError) {
 }
 
 // Connect to a Host Peer ID
-export function connectToHost(peerInstance, hostId, onConnOpen, onData, onConnClose, onError) {
+export function connectToHost(peerInstance, hostId, playerName, onConnOpen, onData, onConnClose, onError) {
   try {
     const conn = peerInstance.connect(hostId, {
-      reliable: true
+      reliable: true,
+      metadata: { name: playerName || 'Guest' }
     });
 
     conn.on('open', () => {

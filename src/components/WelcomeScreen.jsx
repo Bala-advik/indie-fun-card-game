@@ -1,14 +1,28 @@
 import React, { useState } from 'react';
+import ConfirmModal from './ConfirmModal';
 
 export default function WelcomeScreen({ onStartPc, onCreatePvp, onJoinPvp, onStartPvpGame, connectionState, roomCode, connectedGuests, expectedGuests }) {
-  const [joinCode, setJoinCode] = useState('');
+  const [joinCode, setJoinCode] = useState(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    return urlParams.get('room') || '';
+  });
   const [numPlayers, setNumPlayers] = useState(2);
   const [selectedRuleset, setSelectedRuleset] = useState('royal_sequence');
+  const [playerName, setPlayerName] = useState('');
+  const [copyAlert, setCopyAlert] = useState(null);
+
+  React.useEffect(() => {
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('room')) {
+      // Remove room param from URL so it doesn't persist forever
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
 
   const handleJoinSubmit = (e) => {
     e.preventDefault();
     if (joinCode.trim()) {
-      onJoinPvp(joinCode.trim());
+      onJoinPvp(joinCode.trim(), playerName.trim());
     }
   };
 
@@ -71,7 +85,7 @@ export default function WelcomeScreen({ onStartPc, onCreatePvp, onJoinPvp, onSta
                       }).catch(console.error);
                     } else {
                       navigator.clipboard.writeText(link);
-                      alert('Invite link copied to clipboard!');
+                      setCopyAlert('Invite link copied to clipboard!');
                     }
                   }}
                   className="px-2.5 py-1 bg-emerald-500 text-slate-950 font-black rounded hover:bg-emerald-400 text-[10px] uppercase tracking-wider"
@@ -80,7 +94,24 @@ export default function WelcomeScreen({ onStartPc, onCreatePvp, onJoinPvp, onSta
                   <span className="sm:hidden">Share</span>
                 </button>
               </div>
-              <p className="text-[10px] text-slate-500">Or share the code: <span className="font-mono font-bold text-amber-400">{roomCode}</span></p>
+              <div className="flex gap-2 items-center bg-slate-900 p-2 rounded-lg border border-slate-800 text-xs">
+                <span className="text-[10px] text-slate-500 font-bold whitespace-nowrap">ROOM CODE:</span>
+                <input
+                  type="text"
+                  readOnly
+                  value={roomCode}
+                  className="bg-transparent flex-1 text-amber-400 outline-none select-all font-mono font-bold"
+                />
+                <button
+                  onClick={() => {
+                    navigator.clipboard.writeText(roomCode);
+                    setCopyAlert('Room Code copied!');
+                  }}
+                  className="px-2.5 py-1 bg-slate-700 text-slate-200 font-black rounded hover:bg-slate-600 text-[10px] uppercase tracking-wider cursor-pointer"
+                >
+                  Copy Code
+                </button>
+              </div>
             </div>
 
             {onStartPvpGame && (
@@ -97,6 +128,19 @@ export default function WelcomeScreen({ onStartPc, onCreatePvp, onJoinPvp, onSta
         {/* Standard Menu options */}
         {connectionState === 'disconnected' && (
           <div className="space-y-4">
+
+            {/* Player Name */}
+            <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800/80 flex flex-col gap-2">
+              <label className="text-xs text-slate-400 font-bold uppercase tracking-wider text-left">Your Name</label>
+              <input
+                type="text"
+                placeholder="Enter your name (e.g. Ace)"
+                value={playerName}
+                onChange={(e) => setPlayerName(e.target.value)}
+                maxLength={12}
+                className="w-full bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-sm text-slate-200 outline-none focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 transition-all"
+              />
+            </div>
 
             {/* Game Mode Selection */}
             <div className="bg-slate-950/60 p-3 rounded-xl border border-slate-800/80 flex flex-col gap-2">
@@ -135,10 +179,10 @@ export default function WelcomeScreen({ onStartPc, onCreatePvp, onJoinPvp, onSta
 
             {/* Play Offline Option */}
             <button
-              onClick={() => onStartPc(numPlayers, selectedRuleset)}
+              onClick={() => onStartPc(numPlayers, selectedRuleset, playerName.trim())}
               className="w-full py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-slate-950 font-black rounded-xl shadow-lg transition duration-200 cursor-pointer"
             >
-              Play vs Computer (Offline)
+              PLAY OFFLINE VS PC
             </button>
 
             <div className="relative py-2">
@@ -150,7 +194,7 @@ export default function WelcomeScreen({ onStartPc, onCreatePvp, onJoinPvp, onSta
 
             {/* Create Lobby */}
             <button
-              onClick={() => onCreatePvp(numPlayers, selectedRuleset)}
+              onClick={() => onCreatePvp(numPlayers, selectedRuleset, playerName.trim())}
               className="w-full py-3 bg-slate-800 hover:bg-slate-755 border border-slate-700 text-slate-200 font-bold rounded-xl transition cursor-pointer"
             >
               Create Online PvP Lobby
@@ -181,6 +225,16 @@ export default function WelcomeScreen({ onStartPc, onCreatePvp, onJoinPvp, onSta
           <p>Assemble your 13 cards into ranks: <span className="text-emerald-400 font-bold">A, 2, 3, 4, 5, 6, 7, 8, 9, 10, J, Q, K</span>. You can use any combinations of suits. Red/Black Jokers act as wildcards to substitute for missing card ranks.</p>
         </div>
       </div>
+
+      {copyAlert && (
+        <ConfirmModal
+          title="Copied!"
+          message={copyAlert}
+          confirmText="OK"
+          onConfirm={() => setCopyAlert(null)}
+          hideCancel={true}
+        />
+      )}
     </div>
   );
 }
